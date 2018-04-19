@@ -1,5 +1,5 @@
-#ifndef LISPIT_COMMON
-#define LISPIT_COMMON
+#ifndef LISPIT_META
+#define LISPIT_META
 
 #define PRE lisper_
 #define LISPER_VERSION "0.0.0.0.1"

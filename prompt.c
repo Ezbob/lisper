@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "common.h"
+#include "meta.h"
 #include "prompt.h"
 #include "grammar.h"
 

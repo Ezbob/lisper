@@ -1,9 +1,9 @@
-#include "common.h"
 #include "mpc.h"
 
 typedef struct grammar_elems {
     mpc_parser_t* Number;
-    mpc_parser_t* Operator;
+    mpc_parser_t* UnOp;
+    mpc_parser_t* BinOp;
     mpc_parser_t* Expr;
     mpc_parser_t* Lisper;
 } grammar_elems;
