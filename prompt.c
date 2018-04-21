@@ -54,7 +54,7 @@ void do_repl(void) {
 
         if ( mpc_parse("<stdin>", input, elems.Lisper, &r) ) {
             eval_res = eval(r.output);
-#if _DEBUG
+#ifdef _DEBUG
             mpc_ast_print(r.output);
             printf("\n");
 #endif

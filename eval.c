@@ -14,6 +14,10 @@ double eval_op(char *op, double x, double y) {
         return x / y;
     } else if ( strcmp(op, "^") == 0 ) {
         return pow(x, y); 
+    } else if ( strcmp(op, "min") == 0  ) {
+        return x <= y ? x : y;
+    } else if ( strcmp(op, "max") == 0 ) {
+        return x >= y ? x : y;
     }
     return 0.0;
 }
