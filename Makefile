@@ -1,8 +1,8 @@
 CC=gcc
-SYMBOLS?=-D _ARCHLINUX
-CFLAGS=-std=c99 $(SYMBOLS) -Wall -Wextra -pedantic
-LDLIBS=-ledit
-SRCS=grammar.c prompt.c mpc.c lisper.c
+SYMBOLS?=_ARCHLINUX
+CFLAGS=-std=c99 $(addprefix -D , ${SYMBOLS}) -Wall -Wextra -pedantic
+LDLIBS=-ledit -lm
+SRCS=grammar.c prompt.c mpc.c lisper.c eval.c
 OBJS=$(patsubst %.c, %.o, $(SRCS))
 TARGET?=lisper
 
