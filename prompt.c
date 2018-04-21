@@ -42,7 +42,7 @@ void do_repl(void) {
 
     grammar_elems elems;
     mpc_result_t r;
-    double eval_res;
+    lval_t eval_res;
 
     grammar_elems_init(&elems);
     grammar_make_lang(&elems);
@@ -56,9 +56,9 @@ void do_repl(void) {
             eval_res = eval(r.output);
 #ifdef _DEBUG
             mpc_ast_print(r.output);
-            printf("\n");
+            putchar('\n');
 #endif
-            printf("%lf\n", eval_res);
+            lval_println(&eval_res);
             mpc_ast_delete(r.output);
         } else {
             mpc_err_print(r.error);

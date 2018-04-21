@@ -17,7 +17,7 @@ void grammar_make_lang(grammar_elems *elems) {
     
     mpca_lang(MPCA_LANG_DEFAULT,
         "number     : /(-)?[0-9]+(\\.[0-9]*)?/ ;"
-        "operator   : '+' | '-' | '*' | '/' | '^' | /min/ | /max/ ;"
+        "operator   : '+' | '-' | '*' | '/' | '^' | '%' | /min/ | /max/ ;"
         "expr       : <number> |  '(' <operator> <expr>+ ')' ;"
         "lisper     : /^/ <operator> <expr>+ /$/ ;",
         elems->Number, 
