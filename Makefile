@@ -1,10 +1,9 @@
 CC=gcc
 SYMBOLS?=_ARCHLINUX
-DEBUG?=
-ifeq (${DEBUG}, true)
+ifeq (${DEBUG}, 1)
 CFLAGS=-std=c99 -g $(addprefix -D , ${SYMBOLS}) -Wall -Wextra -pedantic
 else
-CFLAGS=-std=c99 -g $(addprefix -D , ${SYMBOLS}) -Wall -Wextra -pedantic
+CFLAGS=-std=c99 $(addprefix -D , ${SYMBOLS}) -Wall -Wextra -pedantic
 endif
 LDLIBS=-ledit -lm
 SRCS=grammar.c prompt.c mpc.c lisper.c lval.c
