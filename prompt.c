@@ -3,7 +3,7 @@
 #include "meta.h"
 #include "prompt.h"
 #include "grammar.h"
-#include "eval.h"
+#include "lval.h"
 
 #ifdef _WIN32
 #include <string.h>
@@ -42,7 +42,7 @@ void do_repl(void) {
 
     grammar_elems elems;
     mpc_result_t r;
-    lval_t eval_res;
+    lval_t *val;
 
     grammar_elems_init(&elems);
     grammar_make_lang(&elems);
@@ -53,12 +53,13 @@ void do_repl(void) {
         add_history(input);
 
         if ( mpc_parse("<stdin>", input, elems.Lisper, &r) ) {
-            eval_res = eval(r.output);
+            val = lval_read(r.output);
 #ifdef _DEBUG
             mpc_ast_print(r.output);
             putchar('\n');
 #endif
-            lval_println(&eval_res);
+            lval_println(val);
+            lval_destroy(val);
             mpc_ast_delete(r.output);
         } else {
             mpc_err_print(r.error);
