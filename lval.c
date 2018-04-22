@@ -140,3 +140,126 @@ lval_t *lval_read(mpc_ast_t *t) {
     return val;
 }
 
+lval_t *lval_pop(lval_t *v, int i) {
+    lval_t *x = v->val.symcells->cells[i];
+
+    memmove(&v->val.symcells->cells[i], &v->val.symcells->cells[i + 1], sizeof(lval_t *) * (v->val.symcells->count - i - 1));
+
+    v->val.symcells->count--;
+
+    v->val.symcells->cells = realloc(v->val.symcells->cells, sizeof(lval_t *) * v->val.symcells->count);
+    
+    return x;
+}
+
+lval_t *lval_take(lval_t *v, int i) {
+    lval_t *x = lval_pop(v, i);
+    lval_destroy(v);
+    return x;
+}
+
+lval_t *builtin_eval(lval_t *v, char *sym) {
+    lscell_t *c = v->val.symcells;
+
+    for ( size_t i = 0; i < c->count; i++ ) {
+        if ( c->cells[i]->type != LVAL_NUM ) {
+            lval_destroy(v);
+            return lval_err("Cannot operate on non-number");
+        }
+    }
+
+    lval_t *a = lval_pop(v, 0);
+
+    if ( strcmp(sym, "-") == 0 && c->count == 0 ) {
+        a->val.num = -a->val.num;
+    }
+
+    while ( v->val.symcells->count > 0 ) {
+        
+        lval_t *b = lval_pop(v, 0);
+        
+        if ( strcmp(sym, "+") == 0 ) {
+            a->val.num += b->val.num; 
+        } else if ( strcmp(sym, "-") == 0 ) {
+            a->val.num -= b->val.num; 
+        } else if ( strcmp(sym, "*") == 0 ) {
+            a->val.num *= b->val.num;
+        } else if ( strcmp(sym, "/") == 0 ) {
+            if ( b->val.num == 0 ) {
+                lval_destroy(a); 
+                lval_destroy(b);
+                a = lval_err("Division by zero");
+                break;
+            }
+            a->val.num /= b->val.num;
+        } else if ( strcmp(sym, "%") == 0 ) {
+            if ( b->val.num == 0 ) {
+                lval_destroy(a); 
+                lval_destroy(b);
+                a = lval_err("Division by zero");
+                break;
+            }
+            a->val.num = fmod(a->val.num, b->val.num);
+        } else if ( strcmp(sym, "min") == 0 ) {
+            if ( a->val.num > b->val.num ) {
+                a->val.num = b->val.num;
+            }
+        } else if ( strcmp(sym, "max") == 0 )  {
+            if ( a->val.num < b->val.num ) {
+                a->val.num = b->val.num;
+            }
+        }
+        lval_destroy(b);
+    }
+
+    lval_destroy(v);
+    return a;
+}
+
+lval_t *lval_eval_sexpr(lval_t *v) {
+    lscell_t *symc;
+    
+    /* depth-first eval of sexpr */
+    symc = v->val.symcells;
+    for ( size_t i = 0; i < symc->count; i++ ) {
+        symc->cells[i] = lval_eval(symc->cells[i]); 
+    }
+
+    /* return first error */
+    for ( size_t i = 0; i < symc->count; i++ ) {
+        if ( symc->cells[i]->type == LVAL_ERR ) {
+            return lval_take(v, i);
+        }
+    }
+
+    /* empty sexpr */
+    if ( symc->count == 0 ) {
+        return v;
+    } 
+
+    /* hoist first lval if only one is available */
+    if ( symc->count == 1 ) {
+        return lval_take(v, 0);
+    }
+
+    /* Symbolic expression was not defined by a symbol */
+    lval_t *f = lval_pop(v, 0);
+    if ( f->type != LVAL_SYM ) {
+        lval_destroy(f);
+        lval_destroy(v);
+        return lval_err("S-expression does not start with a symbol");
+    }
+
+    /* Using builtins to compute expressions */
+    lval_t *res = builtin_eval(v, f->val.sym);
+    lval_destroy(f);
+    return res;
+}
+
+lval_t *lval_eval(lval_t *v) {
+    if ( v->type == LVAL_SEXPR ) {
+        return lval_eval_sexpr(v);
+    }
+    return v;
+}
+

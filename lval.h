@@ -38,6 +38,7 @@ void lval_print(lval_t *);
 void lval_println(lval_t *);
 lval_t *lval_read(mpc_ast_t *);
 void lval_destroy(lval_t *);
+lval_t *lval_eval(lval_t *);
 
 #endif
 

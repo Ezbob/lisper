@@ -53,7 +53,7 @@ void do_repl(void) {
         add_history(input);
 
         if ( mpc_parse("<stdin>", input, elems.Lisper, &r) ) {
-            val = lval_read(r.output);
+            val = lval_eval(lval_read(r.output));
 #ifdef _DEBUG
             mpc_ast_print(r.output);
             putchar('\n');
