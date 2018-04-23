@@ -8,7 +8,8 @@ typedef enum lres_t {
     LVAL_NUM,
     LVAL_ERR,
     LVAL_SYM,
-    LVAL_SEXPR
+    LVAL_SEXPR,
+    LVAL_QEXPR
 } lres_t;
 
 typedef enum lerr_t {
@@ -19,10 +20,10 @@ typedef enum lerr_t {
 
 struct lval_t; 
 
-typedef struct lscell_t {
+typedef struct lcell_list_t {
     size_t count;
     struct lval_t **cells;
-} lscell_t;
+} lcell_list_t;
 
 typedef struct lval_t {
     lres_t type;
@@ -30,7 +31,7 @@ typedef struct lval_t {
         double num;
         char *err;
         char *sym;
-        lscell_t *symcells;
+        lcell_list_t *l;
     } val;
 } lval_t;
 

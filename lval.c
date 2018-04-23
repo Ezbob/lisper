@@ -30,9 +30,18 @@ lval_t *lval_sym(char* sym) {
 lval_t *lval_sexpr(void) {
     lval_t *val = malloc(sizeof(lval_t));
     val->type = LVAL_SEXPR;
-    val->val.symcells = malloc(sizeof(lscell_t));
-    val->val.symcells->count = 0;
-    val->val.symcells->cells = NULL;
+    val->val.l = malloc(sizeof(lcell_list_t));
+    val->val.l->count = 0;
+    val->val.l->cells = NULL;
+    return val;
+}
+
+lval_t *lval_qexpr(void) {
+    lval_t *val = malloc(sizeof(lval_t));
+    val->type = LVAL_QEXPR;
+    val->val.l = malloc(sizeof(lcell_list_t));
+    val->val.l->count = 0;
+    val->val.l->cells = NULL;
     return val;
 }
 
@@ -46,11 +55,12 @@ void lval_destroy(lval_t *val) {
         case LVAL_SYM:
             free(val->val.sym);
             break;
+        case LVAL_QEXPR:
         case LVAL_SEXPR:
-            for ( size_t i = 0; i < val->val.symcells->count; i++ ) {
-                lval_destroy(val->val.symcells->cells[i]);
+            for ( size_t i = 0; i < val->val.l->count; i++ ) {
+                lval_destroy(val->val.l->cells[i]);
             }
-            free(val->val.symcells);
+            free(val->val.l);
             break;
     }
     free(val);
@@ -59,10 +69,10 @@ void lval_destroy(lval_t *val) {
 void lval_expr_print(lval_t *val, char prefix, char suffix) {
     putchar(prefix);
     
-    for ( size_t i = 0; i < val->val.symcells->count; i++ ) {
-        lval_print(val->val.symcells->cells[i]);
+    for ( size_t i = 0; i < val->val.l->count; i++ ) {
+        lval_print(val->val.l->cells[i]);
 
-        if ( i != ( val->val.symcells->count - 1 ) ) {
+        if ( i != ( val->val.l->count - 1 ) ) {
             putchar(' ');
         }
     }
@@ -85,6 +95,9 @@ void lval_print(lval_t *val) {
         case LVAL_SEXPR:
             lval_expr_print(val, '(', ')');
             break;
+        case LVAL_QEXPR:
+            lval_expr_print(val, '{', '}');
+            break;
     }
 }
 
@@ -105,10 +118,9 @@ lval_t *lval_read_num(mpc_ast_t *t) {
 }
 
 lval_t *lval_add(lval_t *val, lval_t *other) {
-    lscell_t *cells = val->val.symcells;
-    cells->count++;
-    cells->cells = realloc(cells->cells, sizeof(lval_t *) * cells->count);
-    cells->cells[cells->count - 1] = other;
+    val->val.l->count++;
+    val->val.l->cells = realloc(val->val.l->cells, sizeof(lval_t *) * val->val.l->count);
+    val->val.l->cells[val->val.l->count - 1] = other;
     return val;
 }
 
@@ -128,9 +140,15 @@ lval_t *lval_read(mpc_ast_t *t) {
         val = lval_sexpr();
     }
 
+    if ( strstr(t->tag, "qexpr") ) {
+        val = lval_qexpr();
+    }
+
     for ( int i = 0; i < t->children_num; i++ ) {
         if ( strcmp(t->children[i]->contents, "(") == 0 ||
              strcmp(t->children[i]->contents, ")") == 0 ||
+             strcmp(t->children[i]->contents, "{") == 0 ||
+             strcmp(t->children[i]->contents, "}") == 0 ||
              strcmp(t->children[i]->tag, "regex") == 0 ) {
             continue;
         }
@@ -141,13 +159,13 @@ lval_t *lval_read(mpc_ast_t *t) {
 }
 
 lval_t *lval_pop(lval_t *v, int i) {
-    lval_t *x = v->val.symcells->cells[i];
+    lval_t *x = v->val.l->cells[i];
 
-    memmove(&v->val.symcells->cells[i], &v->val.symcells->cells[i + 1], sizeof(lval_t *) * (v->val.symcells->count - i - 1));
+    memmove(&v->val.l->cells[i], &v->val.l->cells[i + 1], sizeof(lval_t *) * (v->val.l->count - i - 1));
 
-    v->val.symcells->count--;
+    v->val.l->count--;
 
-    v->val.symcells->cells = realloc(v->val.symcells->cells, sizeof(lval_t *) * v->val.symcells->count);
+    v->val.l->cells = realloc(v->val.l->cells, sizeof(lval_t *) * v->val.l->count);
     
     return x;
 }
@@ -159,7 +177,7 @@ lval_t *lval_take(lval_t *v, int i) {
 }
 
 lval_t *builtin_eval(lval_t *v, char *sym) {
-    lscell_t *c = v->val.symcells;
+    lcell_list_t *c = v->val.l;
 
     for ( size_t i = 0; i < c->count; i++ ) {
         if ( c->cells[i]->type != LVAL_NUM ) {
@@ -174,7 +192,7 @@ lval_t *builtin_eval(lval_t *v, char *sym) {
         a->val.num = -a->val.num;
     }
 
-    while ( v->val.symcells->count > 0 ) {
+    while ( v->val.l->count > 0 ) {
         
         lval_t *b = lval_pop(v, 0);
         
@@ -217,10 +235,10 @@ lval_t *builtin_eval(lval_t *v, char *sym) {
 }
 
 lval_t *lval_eval_sexpr(lval_t *v) {
-    lscell_t *symc;
+    lcell_list_t *symc;
     
     /* depth-first eval of sexpr */
-    symc = v->val.symcells;
+    symc = v->val.l;
     for ( size_t i = 0; i < symc->count; i++ ) {
         symc->cells[i] = lval_eval(symc->cells[i]); 
     }
@@ -262,4 +280,6 @@ lval_t *lval_eval(lval_t *v) {
     }
     return v;
 }
+
+
 
