@@ -37,9 +37,13 @@ typedef struct lval_t {
 
 void lval_print(lval_t *);
 void lval_println(lval_t *);
-lval_t *lval_read(mpc_ast_t *);
 void lval_destroy(lval_t *);
-lval_t *lval_eval(lval_t *);
+lval_t *lval_read(mpc_ast_t *);
+
+lval_t *lval_err(char *);
+lval_t *lval_add(lval_t *, lval_t *);
+lval_t *lval_pop(lval_t *, int);
+lval_t *lval_take(lval_t *, int);
 
 #endif
 

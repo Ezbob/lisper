@@ -6,7 +6,7 @@ else
 CFLAGS=-std=c99 $(addprefix -D , ${SYMBOLS}) -Wall -Wextra -pedantic
 endif
 LDLIBS=-ledit -lm
-SRCS=grammar.c prompt.c mpc.c lisper.c lval.c
+SRCS=grammar.c builtin.c prompt.c mpc.c lisper.c lval.c
 OBJS=$(patsubst %.c, %.o, $(SRCS))
 TARGET?=lisper
 

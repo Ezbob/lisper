@@ -4,6 +4,7 @@
 #include "prompt.h"
 #include "grammar.h"
 #include "lval.h"
+#include "builtin.h"
 
 #ifdef _WIN32
 #include <string.h>
