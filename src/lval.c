@@ -106,14 +106,14 @@ void lval_println(lval_t *val) {
 }
 
 lval_t *lval_read_num(mpc_ast_t *t) {
-        double num = 0.0;
-        int code = sscanf(t->contents, "%lf", &num);
+    double num = 0.0;
+    int code = sscanf(t->contents, "%lf", &num);
 
-        if ( code == 1 ) {
-            return lval_num(num);
-        } else {
-            return lval_err("Invalid number");
-        }
+    if ( code == 1 ) {
+        return lval_num(num);
+    } else {
+        return lval_err("Invalid number");
+    }
 }
 
 lval_t *lval_add(lval_t *val, lval_t *other) {

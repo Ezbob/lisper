@@ -127,12 +127,36 @@ lval_t *builtin_join(lval_t *v) {
     return a;
 }
 
+lval_t *builtin_cons(lval_t *v) {
+    return NULL;
+}
+
+lval_t *builtin_len(lval_t *v) {
+    LASSERT(v, v->val.l->count == 1, "Too many arguments parsed to 'len'");
+    LASSERT(v, v->val.l->cells[0]->type == LVAL_QEXPR, "Wrong type of argument parsed to 'len'." );
+
+    lval_t *arg = lval_pop(v, 0);
+    size_t count = arg->val.l->count;
+
+    while ( arg->val.l->count ) {
+        lval_destroy(lval_pop(arg, 0));
+    }
+
+    arg->type = LVAL_NUM;
+    arg->val.num = ( (double) count );
+    lval_destroy(v);
+
+    return arg;
+}
+
 lval_t *builtin(lval_t *a, char *func) {
     if ( strcmp("list", func) == 0 ) { return builtin_list(a); }
     if ( strcmp("head", func) == 0 ) { return builtin_head(a); }
     if ( strcmp("tail", func) == 0 ) { return builtin_tail(a); }
     if ( strcmp("join", func) == 0 ) { return builtin_join(a); }
     if ( strcmp("eval", func) == 0 ) { return builtin_eval(a); }
+    if ( strcmp("cons", func) == 0 ) { return builtin_cons(a); }
+    if ( strcmp("len", func) == 0 ) { return builtin_len(a); }
 
     if ( strcmp("max", func) == 0 ) { return builtin_op(a, func); }
     if ( strcmp("min", func) == 0 ) { return builtin_op(a, func); }

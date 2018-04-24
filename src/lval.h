@@ -12,12 +12,6 @@ typedef enum lres_t {
     LVAL_QEXPR
 } lres_t;
 
-typedef enum lerr_t {
-    LERR_DIV_ZERO,
-    LERR_BAD_OP,
-    LERR_BAD_NUM
-} lerr_t;
-
 struct lval_t; 
 
 typedef struct lcell_list_t {
@@ -27,7 +21,7 @@ typedef struct lcell_list_t {
 
 typedef struct lval_t {
     lres_t type;
-    union {
+    union val {
         double num;
         char *err;
         char *sym;
@@ -41,6 +35,8 @@ void lval_destroy(lval_t *);
 lval_t *lval_read(mpc_ast_t *);
 
 lval_t *lval_err(char *);
+lval_t *lval_num(double);
+
 lval_t *lval_add(lval_t *, lval_t *);
 lval_t *lval_pop(lval_t *, int);
 lval_t *lval_take(lval_t *, int);
