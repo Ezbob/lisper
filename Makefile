@@ -1,5 +1,5 @@
 CC=gcc
-SYMBOLS?=_ARCHLINUX
+SYMBOLS?=_ARCHLINUX # Arch linux symbol; replace with empty definition to compile for other linux / macOS
 CFLAGS=-std=c99 $(addprefix -D , ${SYMBOLS}) -Wall -Wextra -pedantic
 ifeq (${DEBUG}, 1) # use DEBUG=1 to enable debug symbols to be compiled in
 CFLAGS+=-g
