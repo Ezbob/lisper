@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "meta.h"
+#include <signal.h>
 #include "prompt.h"
 #include "grammar.h"
 #include "lval.h"
@@ -35,18 +35,29 @@ void add_history(char* unused) {}
 
 #endif
 
+grammar_elems elems;
+
+void sigint_handler(int signum) {
+    /* clean-up has to handled by SIGINT handler since we have while (1) */
+    if ( signum == SIGINT ) {
+        grammar_elems_destroy(&elems);
+        printf("\nBye.\n");
+        exit(0);
+    }
+}
+
 void do_repl(void) {
     char *input;
-    printf("lisper version %s\n", LISPER_VERSION);
+    printf("lisper version %s\n", "0.0.0.1");
     printf("Anders Busch 2018\n");
     puts("Press Ctrl+c to Exit\n");
 
-    grammar_elems elems;
     mpc_result_t r;
     lval_t *val;
 
     grammar_elems_init(&elems);
     grammar_make_lang(&elems);
+    signal(SIGINT, sigint_handler);
 
     while ( 1 ) {
         input = readline("lisper>>> ");
@@ -70,7 +81,6 @@ void do_repl(void) {
         free(input); 
     }
 
-    grammar_elems_destroy(&elems);
 }
 
 

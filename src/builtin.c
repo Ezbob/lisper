@@ -67,7 +67,7 @@ lval_t *builtin_tail(lval_t *v) {
     LASSERT(v, v->val.l->count != 0, "Empty qexpression parsed to 'tail'");
 
     lval_t *a = lval_take(v, 0);
-    lval_destroy(lval_pop(v, 0));
+    lval_destroy(lval_pop(a, 0));
 
     return a;
 }

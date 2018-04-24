@@ -81,7 +81,6 @@ void lval_expr_print(lval_t *val, char prefix, char suffix) {
 }
 
 void lval_print(lval_t *val) {
-
     switch ( val->type ) {
         case LVAL_NUM:
             printf("%lf", val->val.num);
@@ -164,7 +163,6 @@ lval_t *lval_pop(lval_t *v, int i) {
     memmove(&v->val.l->cells[i], &v->val.l->cells[i + 1], sizeof(lval_t *) * (v->val.l->count - i - 1));
 
     v->val.l->count--;
-
     v->val.l->cells = realloc(v->val.l->cells, sizeof(lval_t *) * v->val.l->count);
     
     return x;
