@@ -13,6 +13,9 @@
 #define LEXACT_ARGS(sym, funcname, numargs) \
     LASSERT(sym, sym->val.l->count == numargs, "Wrong number of arguments parsed to '"#funcname"'. Expected at exactly "#numargs" argument(s). ")
 
+#define LNOT_EMPTY_QEXPR(sym, funcname, i) \
+    LASSERT(sym, sym->val.l->cells[i]->type == LVAL_QEXPR && sym->val.l->cells[i]->val.l->count > 0, "Empty qexpression parsed to '"#funcname"'.")
+
 
 lval_t *builtin_op(lval_t *v, char *sym) {
     lcell_list_t *c = v->val.l;
@@ -78,8 +81,9 @@ lval_t *builtin_tail(lval_t *v) {
     LASSERT(v, v->val.l->cells[0]->type == LVAL_QEXPR, "Wrong type of argument parsed to 'tail'. 'tail' expects a qexpression. ");
 
     lval_t *a = lval_take(v, 0);
-    lval_destroy(lval_pop(a, 0));
-
+    if ( a->val.l->count > 0 ) {
+        lval_destroy(lval_pop(a, 0));
+    }
     return a;
 }
 
@@ -164,10 +168,22 @@ lval_t *builtin_len(lval_t *v) {
     }
 
     arg->type = LVAL_NUM;
-    arg->val.num = ( (double) count );
+    arg->val.num = ( (double) count ); // we only have double defined as numbers
     lval_destroy(v);
 
     return arg;
+}
+
+lval_t *builtin_init(lval_t *v) {
+    LEXACT_ARGS(v, init, 1);
+    LASSERT(v, v->val.l->cells[0]->type == LVAL_QEXPR, "Wrong type of argument parsed to 'init'.");
+
+    lval_t *qexpr = lval_pop(v, 0);
+    if ( qexpr->val.l->count > 0 ) {
+        lval_destroy(lval_pop(qexpr, (qexpr->val.l->count - 1) ));
+    }
+    lval_destroy(v);
+    return qexpr;
 }
 
 lval_t *builtin(lval_t *a, char *func) {
@@ -178,6 +194,7 @@ lval_t *builtin(lval_t *a, char *func) {
     if ( strcmp("eval", func) == 0 ) { return builtin_eval(a); }
     if ( strcmp("cons", func) == 0 ) { return builtin_cons(a); }
     if ( strcmp("len", func) == 0 ) { return builtin_len(a); }
+    if ( strcmp("init", func) == 0 ) { return builtin_init(a); }
 
     if ( strcmp("max", func) == 0 ) { return builtin_op(a, func); }
     if ( strcmp("min", func) == 0 ) { return builtin_op(a, func); }
