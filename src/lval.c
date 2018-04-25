@@ -125,7 +125,6 @@ lval_t *lval_add(lval_t *val, lval_t *other) {
 
 lval_t *lval_offer(lval_t *val, lval_t *other) {
     val->val.l->count++;
-    printf("count %lu\n", val->val.l->count);
     lval_t **resized = realloc(val->val.l->cells, sizeof(lval_t *) * val->val.l->count);
         // resize the memory buffer to carry another cell
 
