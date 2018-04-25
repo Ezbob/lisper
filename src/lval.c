@@ -123,6 +123,27 @@ lval_t *lval_add(lval_t *val, lval_t *other) {
     return val;
 }
 
+lval_t *lval_offer(lval_t *val, lval_t *other) {
+    val->val.l->count++;
+    printf("count %lu\n", val->val.l->count);
+    lval_t **resized = realloc(val->val.l->cells, sizeof(lval_t *) * val->val.l->count);
+        // resize the memory buffer to carry another cell
+
+    if ( resized == NULL ) {
+        printf("Fatal memory error when trying reallocating for offer. Stopping.");
+        lval_destroy(val);
+        exit(1);
+    }
+    val->val.l->cells = resized;
+    memmove(val->val.l->cells + 1, val->val.l->cells, sizeof(lval_t *) * ( val->val.l->count - 1 ) );
+        // move memory at address val->val.l->cells (op to old count of cells) to addr val->val.l->cells[1]
+
+    val->val.l->cells[0] = other;
+        // insert into the front of the array
+
+    return val;
+}
+
 lval_t *lval_read(mpc_ast_t *t) {
     lval_t *val = NULL;
 
@@ -163,8 +184,16 @@ lval_t *lval_pop(lval_t *v, int i) {
     memmove(&v->val.l->cells[i], &v->val.l->cells[i + 1], sizeof(lval_t *) * (v->val.l->count - i - 1));
 
     v->val.l->count--;
-    v->val.l->cells = realloc(v->val.l->cells, sizeof(lval_t *) * v->val.l->count);
-    
+    lval_t **realloced = realloc(v->val.l->cells, sizeof(lval_t *) * v->val.l->count);
+    if ( realloced == NULL && v->val.l->count != 0 ) {
+        // since we always shrink the array we will hit count == 0 eventually,
+        // making the reallocated pointer some value that shouldn't be dereferenced
+        printf("Fatal memory error when trying reallocating for pop. Stopping.");
+        lval_destroy(v);
+        exit(1);
+    }
+    v->val.l->cells = realloced;
+
     return x;
 }
 

@@ -38,6 +38,7 @@ lval_t *lval_err(char *);
 lval_t *lval_num(double);
 
 lval_t *lval_add(lval_t *, lval_t *);
+lval_t *lval_offer(lval_t *, lval_t *);
 lval_t *lval_pop(lval_t *, int);
 lval_t *lval_take(lval_t *, int);
 

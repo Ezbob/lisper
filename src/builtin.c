@@ -1,6 +1,18 @@
 #include "builtin.h"
 #include "lval.h"
 
+#define LASSERT(args, cond, err) \
+    if ( !(cond) ) { lval_destroy(args); return lval_err(err);  }
+
+#define LLEAST_ARGS(sym, funcname, numargs) \
+    LASSERT(sym, sym->val.l->count >= numargs, "Not enough arguments parsed to '"#funcname"'. Expected at least "#numargs" argument(s).")
+
+#define LMOST_ARGS(sym, funcname, numargs) \
+    LASSERT(sym, sym->val.l->count <= numargs, "Too many arguments parsed to '"#funcname"'. Expected at most "#numargs" argument(s).")
+
+#define LEXACT_ARGS(sym, funcname, numargs) \
+    LASSERT(sym, sym->val.l->count == numargs, "Wrong number of arguments parsed to '"#funcname"'. Expected at exactly "#numargs" argument(s). ")
+
 
 lval_t *builtin_op(lval_t *v, char *sym) {
     lcell_list_t *c = v->val.l;
@@ -62,9 +74,8 @@ lval_t *builtin_op(lval_t *v, char *sym) {
 
 lval_t *builtin_tail(lval_t *v) {
 
-    LASSERT(v, v->val.l->count == 1, "Too many arguments parsed to 'tail'");
+    LEXACT_ARGS(v, tail, 1);
     LASSERT(v, v->val.l->cells[0]->type == LVAL_QEXPR, "Wrong type of argument parsed to 'tail'. 'tail' expects a qexpression. ");
-    LASSERT(v, v->val.l->count != 0, "Empty qexpression parsed to 'tail'");
 
     lval_t *a = lval_take(v, 0);
     lval_destroy(lval_pop(a, 0));
@@ -74,9 +85,8 @@ lval_t *builtin_tail(lval_t *v) {
 
 lval_t *builtin_head(lval_t *v) {
 
-    LASSERT(v, v->val.l->count == 1, "Too many arguments parsed to 'head'");
+    LEXACT_ARGS(v, head, 1);
     LASSERT(v, v->val.l->cells[0]->type == LVAL_QEXPR, "Wrong type of argument parsed to 'head'. 'head' applies to qexpressions." );
-    LASSERT(v, v->val.l->count != 0, "Empty qexpression parsed to 'head'");
         
     lval_t *a = lval_take(v, 0);
     
@@ -93,7 +103,8 @@ lval_t *builtin_list(lval_t *v) {
 }
 
 lval_t *builtin_eval(lval_t *v) {
-    LASSERT(v, v->val.l->count == 1, "Too many arguments parsed to 'eval'." );
+
+    LEXACT_ARGS(v, eval, 1);
     LASSERT(v, v->val.l->cells[0]->type == LVAL_QEXPR, "Incorrect type of argument parsed to 'eval'");
     
     lval_t *a = lval_take(v, 0);
@@ -128,11 +139,21 @@ lval_t *builtin_join(lval_t *v) {
 }
 
 lval_t *builtin_cons(lval_t *v) {
-    return NULL;
+
+    LEXACT_ARGS(v, cons, 2);
+    LASSERT(v, v->val.l->cells[1]->type == LVAL_QEXPR, "Wrong argument type. Second argument should be a qexpression.");
+
+    lval_t *otherval = lval_pop(v, 0);
+    lval_t *qexpr = lval_pop(v, 0);
+
+    lval_offer(qexpr, otherval);
+
+    lval_destroy(v);
+    return qexpr;
 }
 
 lval_t *builtin_len(lval_t *v) {
-    LASSERT(v, v->val.l->count == 1, "Too many arguments parsed to 'len'");
+    LEXACT_ARGS(v, len, 1);
     LASSERT(v, v->val.l->cells[0]->type == LVAL_QEXPR, "Wrong type of argument parsed to 'len'." );
 
     lval_t *arg = lval_pop(v, 0);
