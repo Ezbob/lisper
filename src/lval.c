@@ -215,22 +215,23 @@ lval_t *lval_take(lval_t *v, int i) {
 }
 
 lval_t *lval_copy(lval_t *v) {
+
     lval_t *x = malloc(sizeof(lval_t));
     x->type = v->type;
 
     switch(v->type) {
-        case LVAL_FUN:
+        case LVAL_FUN: 
             x->val.fun = v->val.fun;
             break;
         case LVAL_NUM:
             x->val.num = v->val.num;
             break;
         case LVAL_ERR:
-            x->val.err = malloc(strlen(v->val.err) + 1); /* copy */
+            x->val.err = malloc((strlen(v->val.err) + 1) * sizeof(char)); /* copy */
             strcpy(x->val.err, v->val.err);
             break;
         case LVAL_SYM:
-            x->val.sym = malloc(strlen(v->val.sym) + 1);
+            x->val.sym = malloc((strlen(v->val.sym) + 1) * sizeof(char));
             strcpy(x->val.sym, v->val.sym);
             break;
         case LVAL_SEXPR:

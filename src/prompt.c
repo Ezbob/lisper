@@ -4,6 +4,7 @@
 #include "prompt.h"
 #include "grammar.h"
 #include "lval.h"
+#include "lenv.h"
 #include "builtin.h"
 
 #ifdef _WIN32
@@ -36,11 +37,13 @@ void add_history(char* unused) {}
 #endif
 
 grammar_elems elems;
+lenv_t *env = NULL;
 
 void sigint_handler(int signum) {
     /* clean-up has to handled by SIGINT handler since we have while (1) */
     if ( signum == SIGINT ) {
         grammar_elems_destroy(&elems);
+        lenv_destroy(env);
         printf("\nBye.\n");
         exit(0);
     }
@@ -55,6 +58,9 @@ void do_repl(void) {
     mpc_result_t r;
     lval_t *val;
 
+    env = lenv_new();
+    lenv_add_builtins(env);
+
     grammar_elems_init(&elems);
     grammar_make_lang(&elems);
     signal(SIGINT, sigint_handler);
@@ -65,7 +71,7 @@ void do_repl(void) {
         add_history(input);
 
         if ( mpc_parse("<stdin>", input, elems.Lisper, &r) ) {
-            val = lval_eval(lval_read(r.output));
+            val = lval_eval(env, lval_read(r.output));
 #ifdef _DEBUG
             mpc_ast_print(r.output);
             putchar('\n');
@@ -82,5 +88,4 @@ void do_repl(void) {
     }
 
 }
-
 

@@ -8,7 +8,7 @@ LDLIBS=-ledit -lm
 VPATH=src/
 OBJPATH=obj/
 
-SRCS=grammar.c builtin.c prompt.c mpc.c lisper.c lval.c
+SRCS=grammar.c builtin.c prompt.c mpc.c lisper.c lval.c lenv.c
 OBJS=$(SRCS:%.c=${OBJPATH}%.o)
 HDRS=$(wildcard ${VPATH}*.h)
 TARGET?=lisper

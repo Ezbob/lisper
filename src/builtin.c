@@ -1,5 +1,8 @@
 #include "builtin.h"
 #include "lval.h"
+#include "lenv.h"
+
+#define UNUSED(x) (void)(x)
 
 #define LASSERT(args, cond, err) \
     if ( !(cond) ) { lval_destroy(args); return lval_err(err);  }
@@ -17,7 +20,8 @@
     LASSERT(sym, sym->val.l->cells[i]->type == LVAL_QEXPR && sym->val.l->cells[i]->val.l->count > 0, "Empty qexpression parsed to '"#funcname"'.")
 
 
-lval_t *builtin_op(lval_t *v, char *sym) {
+lval_t *builtin_op(lenv_t *e, lval_t *v, char *sym) {
+    UNUSED(e);
     lcell_list_t *c = v->val.l;
 
     for ( size_t i = 0; i < c->count; i++ ) {
@@ -75,7 +79,40 @@ lval_t *builtin_op(lval_t *v, char *sym) {
     return a;
 }
 
-lval_t *builtin_tail(lval_t *v) {
+lval_t *builtin_add(lenv_t *e, lval_t *a) {
+    return builtin_op(e, a, "+");
+}
+
+lval_t *builtin_sub(lenv_t *e, lval_t *a) {
+    return builtin_op(e, a, "-");
+}
+
+lval_t *builtin_mul(lenv_t *e, lval_t *a) {
+    return builtin_op(e, a, "*");
+}
+
+lval_t *builtin_div(lenv_t *e, lval_t *a) {
+    return builtin_op(e, a, "/");
+}
+
+lval_t *builtin_pow(lenv_t *e, lval_t *a) {
+    return builtin_op(e, a, "^");
+}
+
+lval_t *builtin_fmod(lenv_t *e, lval_t *a) {
+    return builtin_op(e, a, "%");
+}
+
+lval_t *builtin_min(lenv_t *e, lval_t *a) {
+    return builtin_op(e, a, "min");
+}
+
+lval_t *builtin_max(lenv_t *e, lval_t *a) {
+    return builtin_op(e, a, "max");
+}
+
+lval_t *builtin_tail(lenv_t *e, lval_t *v) {
+    UNUSED(e);
 
     LEXACT_ARGS(v, tail, 1);
     LASSERT(v, v->val.l->cells[0]->type == LVAL_QEXPR, "Wrong type of argument parsed to 'tail'. 'tail' expects a qexpression. ");
@@ -87,7 +124,8 @@ lval_t *builtin_tail(lval_t *v) {
     return a;
 }
 
-lval_t *builtin_head(lval_t *v) {
+lval_t *builtin_head(lenv_t *e, lval_t *v) {
+    UNUSED(e);
 
     LEXACT_ARGS(v, head, 1);
     LASSERT(v, v->val.l->cells[0]->type == LVAL_QEXPR, "Wrong type of argument parsed to 'head'. 'head' applies to qexpressions." );
@@ -101,19 +139,19 @@ lval_t *builtin_head(lval_t *v) {
     return a;
 }
 
-lval_t *builtin_list(lval_t *v) {
+lval_t *builtin_list(lenv_t *e, lval_t *v) {
+    UNUSED(e);
     v->type = LVAL_QEXPR;
     return v;
 }
 
-lval_t *builtin_eval(lval_t *v) {
-
+lval_t *builtin_eval(lenv_t *e, lval_t *v) {
     LEXACT_ARGS(v, eval, 1);
     LASSERT(v, v->val.l->cells[0]->type == LVAL_QEXPR, "Incorrect type of argument parsed to 'eval'");
     
     lval_t *a = lval_take(v, 0);
     a->type = LVAL_SEXPR;
-    return lval_eval(a);
+    return lval_eval(e, a);
 }
 
 lval_t *lval_join(lval_t *x, lval_t *y) {
@@ -125,8 +163,8 @@ lval_t *lval_join(lval_t *x, lval_t *y) {
     return x;
 }
 
-lval_t *builtin_join(lval_t *v) {
-
+lval_t *builtin_join(lenv_t *e, lval_t *v) {
+    UNUSED(e);
     for ( size_t i = 0; i < v->val.l->count; ++i ) {
         LASSERT(v, v->val.l->cells[i]->type == LVAL_QEXPR,
             "Incorrect type of argument parsed to 'join'");
@@ -142,8 +180,8 @@ lval_t *builtin_join(lval_t *v) {
     return a;
 }
 
-lval_t *builtin_cons(lval_t *v) {
-
+lval_t *builtin_cons(lenv_t *e, lval_t *v) {
+    UNUSED(e);
     LEXACT_ARGS(v, cons, 2);
     LASSERT(v, v->val.l->cells[1]->type == LVAL_QEXPR, "Wrong argument type. Second argument should be a qexpression.");
 
@@ -156,7 +194,8 @@ lval_t *builtin_cons(lval_t *v) {
     return qexpr;
 }
 
-lval_t *builtin_len(lval_t *v) {
+lval_t *builtin_len(lenv_t *e, lval_t *v) {
+    UNUSED(e);
     LEXACT_ARGS(v, len, 1);
     LASSERT(v, v->val.l->cells[0]->type == LVAL_QEXPR, "Wrong type of argument parsed to 'len'." );
 
@@ -174,7 +213,8 @@ lval_t *builtin_len(lval_t *v) {
     return arg;
 }
 
-lval_t *builtin_init(lval_t *v) {
+lval_t *builtin_init(lenv_t *e, lval_t *v) {
+    UNUSED(e);
     LEXACT_ARGS(v, init, 1);
     LASSERT(v, v->val.l->cells[0]->type == LVAL_QEXPR, "Wrong type of argument parsed to 'init'.");
 
@@ -186,36 +226,32 @@ lval_t *builtin_init(lval_t *v) {
     return qexpr;
 }
 
-lval_t *builtin(lval_t *a, char *func) {
-    if ( strcmp("list", func) == 0 ) { return builtin_list(a); }
-    if ( strcmp("head", func) == 0 ) { return builtin_head(a); }
-    if ( strcmp("tail", func) == 0 ) { return builtin_tail(a); }
-    if ( strcmp("join", func) == 0 ) { return builtin_join(a); }
-    if ( strcmp("eval", func) == 0 ) { return builtin_eval(a); }
-    if ( strcmp("cons", func) == 0 ) { return builtin_cons(a); }
-    if ( strcmp("len", func) == 0 ) { return builtin_len(a); }
-    if ( strcmp("init", func) == 0 ) { return builtin_init(a); }
+lval_t *builtin_def(lenv_t *e, lval_t *v) {
+    LASSERT(v, v->val.l->cells[0]->type == LVAL_QEXPR, "Wrong type of argument parsed to 'def'.");
 
-    if ( strcmp("max", func) == 0 ) { return builtin_op(a, func); }
-    if ( strcmp("min", func) == 0 ) { return builtin_op(a, func); }
+    lval_t *syms = v->val.l->cells[0];
 
-    if ( strstr("+-/*^%", func) ) {
-        return builtin_op(a, func);
+    for ( size_t i = 0; i < syms->val.l->count; ++i ) {
+        LASSERT(v, syms->val.l->cells[i]->type == LVAL_SYM, "Function 'def' cannot assign value(s) to name(s). One of the names contains non-symbols.");
     }
 
-    lval_destroy(a);
+    LASSERT(v, syms->val.l->count == v->val.l->count - 1, "Function 'def' cannot assign value(s) to name(s). Number of name(s) and value(s) does not match.");
 
-    return lval_err("Unknown function");
+    for ( size_t i = 0; i < syms->val.l->count; ++i ) {
+        lenv_put(e, syms->val.l->cells[i], v->val.l->cells[i + 1]);
+    }
+
+    lval_destroy(v);
+    return lval_sexpr();
 }
 
-
-lval_t *lval_eval_sexpr(lval_t *v) {
+lval_t *lval_eval_sexpr(lenv_t *e, lval_t *v) {
     lcell_list_t *symc;
     
     /* depth-first eval of sexpr */
     symc = v->val.l;
     for ( size_t i = 0; i < symc->count; i++ ) {
-        symc->cells[i] = lval_eval(symc->cells[i]); 
+        symc->cells[i] = lval_eval(e, symc->cells[i]); 
     }
 
     /* return first error */
@@ -237,22 +273,32 @@ lval_t *lval_eval_sexpr(lval_t *v) {
 
     /* Symbolic expression was not defined by a symbol */
     lval_t *f = lval_pop(v, 0);
-    if ( f->type != LVAL_SYM ) {
+    if ( f->type != LVAL_FUN ) {
         lval_destroy(f);
         lval_destroy(v);
-        return lval_err("S-expression does not start with a symbol");
+        return lval_err("First element in S-expression is not a function");
     }
 
     /* Using builtins to compute expressions */
-    lval_t *res = builtin(v, f->val.sym);
+    lval_t *res = f->val.fun(e, v);
     lval_destroy(f);
     return res;
 }
 
-lval_t *lval_eval(lval_t *v) {
-    if ( v->type == LVAL_SEXPR ) {
-        return lval_eval_sexpr(v);
+lval_t *lval_eval(lenv_t *e, lval_t *v) {
+    lval_t *x; 
+    switch ( v->type ) {
+        case LVAL_SYM:
+            x = lenv_get(e, v);
+            lval_destroy(v);
+            return x;
+
+        case LVAL_SEXPR:
+            return lval_eval_sexpr(e, v);
+        default:
+            break;
     }
+
     return v;
 }
 

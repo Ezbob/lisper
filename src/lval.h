@@ -46,6 +46,10 @@ void lval_destroy(lval_t *);
 /* lval constructors */
 lval_t *lval_err(char *);
 lval_t *lval_num(double);
+lval_t *lval_sym(char *);
+lval_t *lval_fun(lbuiltin);
+lval_t *lval_sexpr(void);
+lval_t *lval_qexpr(void);
 
 /* lval transformers */
 lval_t *lval_add(lval_t *, lval_t *);
