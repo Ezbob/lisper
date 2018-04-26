@@ -26,8 +26,7 @@ void grammar_make_lang(grammar_elems *elems) {
     
     mpca_lang(MPCA_LANG_DEFAULT,
         "number     : /(-)?[0-9]+(\\.[0-9]*)?/ ;"
-        "symbol     : '+' | '-' | '*' | '/' | '^' | '%' | \"min\" | \"max\""
-            " | \"list\" | \"head\" | \"tail\" | \"join\" | \"eval\" | \"cons\" | \"len\"  | \"init\" ;"
+        "symbol     : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%^]+/ ;"
         "qexpr      : '{' <expr>* '}' ;"
         "sexpr      : '(' <expr>* ')' ;"
         "expr       : <number> | <symbol> | <sexpr> | <qexpr> ;"
