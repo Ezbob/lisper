@@ -39,7 +39,7 @@ void add_history(char* unused) {}
 grammar_elems elems;
 lenv_t *env = NULL;
 
-void sigint_handler(int signum) {
+void signal_handler(int signum) {
     /* clean-up has to handled by SIGINT handler since we have while (1) */
     if ( signum == SIGINT ) {
         grammar_elems_destroy(&elems);
@@ -65,7 +65,7 @@ void do_repl(void) {
 #endif
     grammar_elems_init(&elems);
     grammar_make_lang(&elems);
-    signal(SIGINT, sigint_handler);
+    signal(SIGINT, signal_handler);
 
     while ( 1 ) {
         input = readline("lisper>>> ");
@@ -90,5 +90,6 @@ void do_repl(void) {
         free(input); 
     }
 
+    grammar_elems_destroy(&elems);
 }
 

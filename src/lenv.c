@@ -44,6 +44,7 @@ void lenv_add_builtins(lenv_t *e) {
     LENV_BUILTIN(len);
     LENV_BUILTIN(init);
     LENV_BUILTIN(def);
+    LENV_BUILTIN(exit);
 
     LENV_BUILTIN(max);
     LENV_BUILTIN(min);

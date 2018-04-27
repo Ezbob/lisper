@@ -1,6 +1,9 @@
+#include <stdlib.h>
+#include <math.h>
 #include "builtin.h"
 #include "lval.h"
 #include "lenv.h"
+#include "prompt.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -238,6 +241,19 @@ lval_t *builtin_def(lenv_t *e, lval_t *v) {
 
     lval_del(v);
     return lval_sexpr();
+}
+
+lval_t *builtin_exit(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LEXACT_ARGS(v, exit, 1);
+    LWRONG_ARG_TYPE(v, exit, 0, LVAL_NUM);
+
+    int exit_code = floor(v->val.l->cells[0]->val.num);
+    lval_del(v);
+    lenv_del(e);
+    exit(exit_code);
+
+    return NULL;
 }
 
 lval_t *lval_eval_sexpr(lenv_t *e, lval_t *v) {
