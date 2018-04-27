@@ -18,11 +18,19 @@ lval_t *lval_num(double num) {
     return val;
 }
 
-lval_t *lval_err(char *err) {
+lval_t *lval_err(char *fmt, ...) {
     lval_t *val = malloc(sizeof(lval_t));
     val->type = LVAL_ERR;
-    val->val.err = malloc(strlen(err) + 1);
-    strcpy(val->val.err, err);
+    va_list va;
+    va_start(va, fmt);
+
+    val->val.err = malloc(512 * sizeof(char));
+    vsnprintf(val->val.err, 511, fmt, va);
+
+    val->val.err = realloc(val->val.err, strlen(val->val.err) + 1);
+
+    va_end(va); 
+
     return val;
 }
 
@@ -137,7 +145,7 @@ lval_t *lval_read_num(mpc_ast_t *t) {
     if ( code == 1 ) {
         return lval_num(num);
     } else {
-        return lval_err("Invalid number");
+        return lval_err("Cloud not parse '%s' as a number.", t->contents);
     }
 }
 
@@ -154,7 +162,7 @@ lval_t *lval_offer(lval_t *val, lval_t *other) {
         // resize the memory buffer to carry another cell
 
     if ( resized == NULL ) {
-        printf("Fatal memory error when trying reallocating for offer. Stopping.");
+        perror("Fatal memory error when trying reallocating for offer");
         lval_del(val);
         exit(1);
     }
@@ -166,6 +174,15 @@ lval_t *lval_offer(lval_t *val, lval_t *other) {
         // insert into the front of the array
 
     return val;
+}
+
+lval_t *lval_join(lval_t *x, lval_t *y) {
+    while ( y->val.l->count ) {
+        x = lval_add(x, lval_pop(y, 0));
+    }
+
+    lval_del(y);
+    return x;
 }
 
 lval_t *lval_read(mpc_ast_t *t) {
@@ -209,7 +226,7 @@ lval_t *lval_pop(lval_t *v, int i) {
     lval_t **cs = v->val.l->cells;
     cs = realloc(cs, sizeof(lval_t *) * v->val.l->count);
     if (!cs && v->val.l->count > 0) {
-        printf("Memory error");
+        perror("Could not shrink cell buffer");
         lval_del(v);
         exit(1);
     }
@@ -256,5 +273,24 @@ lval_t *lval_copy(lval_t *v) {
     }
 
     return x;
+}
+
+
+char *ltype_name(ltype t) {
+    switch ( t ) {
+        case LVAL_SYM:
+            return "symbol";
+        case LVAL_FUN:
+            return "function";
+        case LVAL_NUM:
+            return "number";
+        case LVAL_QEXPR:
+            return "q-expression";
+        case LVAL_SEXPR:
+            return "s-expression";
+        default:
+            break;
+    }
+    return "Unknown";
 }
 

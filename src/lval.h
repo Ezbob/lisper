@@ -4,14 +4,14 @@
 #include "mpc.h"
 #include <stdlib.h>
 
-typedef enum lres_t {
+typedef enum ltype {
     LVAL_NUM,
     LVAL_ERR,
     LVAL_SYM,
     LVAL_SEXPR,
     LVAL_QEXPR,
     LVAL_FUN
-} lres_t;
+} ltype;
 
 struct lval_t; 
 struct lenv_t;
@@ -27,7 +27,7 @@ typedef struct lcell_list_t {
 } lcell_list_t;
 
 struct lval_t {
-    lres_t type;
+    ltype type;
     union val {
         double num;
         char *err;
@@ -44,7 +44,7 @@ void lval_println(lval_t *);
 void lval_del(lval_t *);
 
 /* lval constructors */
-lval_t *lval_err(char *);
+lval_t *lval_err(char *, ...);
 lval_t *lval_num(double);
 lval_t *lval_sym(char *);
 lval_t *lval_fun(lbuiltin);
@@ -54,9 +54,12 @@ lval_t *lval_qexpr(void);
 /* lval transformers */
 lval_t *lval_add(lval_t *, lval_t *);
 lval_t *lval_offer(lval_t *, lval_t *);
+lval_t *lval_join(lval_t *, lval_t *);
 lval_t *lval_pop(lval_t *, int);
 lval_t *lval_take(lval_t *, int); /* same as pop except frees input lval */
 lval_t *lval_copy(lval_t *);
+
+char *ltype_name(ltype);
 
 #endif
 

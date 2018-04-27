@@ -63,7 +63,7 @@ lval_t *lenv_get(lenv_t *e, lval_t *k) {
             return lval_copy(e->vals[i]);
         }
     }
-    return lval_err("unbound symbol");
+    return lval_err("Unbound symbol '%s'", k->val.sym);
 }
 
 void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
@@ -86,29 +86,10 @@ void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
 
 }
 
-char *lval_type_print(lval_t *v) {
-    switch ( v->type ) {
-        case LVAL_SYM:
-            return "SYM";
-        case LVAL_FUN:
-            return "FUNC";
-        case LVAL_NUM:
-            return "NUM";
-        case LVAL_QEXPR:
-            return "QEXPR";
-        case LVAL_SEXPR:
-            return "SEXPR";
-        default:
-            break;
-    }
-
-    return "UNKNOWN";
-}
-
 void lenv_pretty_print(lenv_t *e) {
-    printf("--env content:\n");
+    printf("DEBUG -- lenv content:\n");
     for ( size_t i = 0; i < e->count; ++i ) {
-        printf("    n: %s t: %s p: %p\n", e->syms[i], lval_type_print(e->vals[i]), (void *) (e->vals + i));
+        printf("    n: %s t: %s p: %p\n", e->syms[i], ltype_name(e->vals[i]->type), (void *) (e->vals + i));
     }
-    printf("--END\n");
+    printf("DEBUG -- lenv END\n");
 }
