@@ -13,10 +13,10 @@ lenv_t *lenv_new(void) {
     return env;
 }
 
-void lenv_destroy(lenv_t *env) {
-    for (size_t i = 0; i < env->count; ++i) {
+void lenv_del(lenv_t *env) {
+    for ( size_t i = 0; i < env->count; ++i ) {
         free(env->syms[i]);
-        lval_destroy(env->vals[i]);
+        lval_del(env->vals[i]);
     }
 
     free(env->syms);
@@ -30,8 +30,8 @@ void lenv_add_builtin(lenv_t *e, char *name, lbuiltin func) {
 
     lenv_put(e, k, v);
 
-    lval_destroy(k);
-    lval_destroy(v);
+    lval_del(k);
+    lval_del(v);
 }
 
 void lenv_add_builtins(lenv_t *e) {
@@ -70,7 +70,7 @@ void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
 
     for ( size_t i = 0; i < e->count; ++i ) {
         if ( strcmp(e->syms[i], k->val.sym) == 0 ) {
-            lval_destroy(e->vals[i]);
+            lval_del(e->vals[i]);
             e->vals[i] = lval_copy(v);
             return;
         }
@@ -86,3 +86,29 @@ void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
 
 }
 
+char *lval_type_print(lval_t *v) {
+    switch ( v->type ) {
+        case LVAL_SYM:
+            return "SYM";
+        case LVAL_FUN:
+            return "FUNC";
+        case LVAL_NUM:
+            return "NUM";
+        case LVAL_QEXPR:
+            return "QEXPR";
+        case LVAL_SEXPR:
+            return "SEXPR";
+        default:
+            break;
+    }
+
+    return "UNKNOWN";
+}
+
+void lenv_pretty_print(lenv_t *e) {
+    printf("--env content:\n");
+    for ( size_t i = 0; i < e->count; ++i ) {
+        printf("    n: %s t: %s p: %p\n", e->syms[i], lval_type_print(e->vals[i]), (void *) (e->vals + i));
+    }
+    printf("--END\n");
+}

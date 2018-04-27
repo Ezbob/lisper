@@ -4,6 +4,13 @@
 #include <string.h>
 #include <math.h>
 
+lcell_list_t *lcell_list_new(void) {
+    lcell_list_t *l = malloc(sizeof(lcell_list_t));;
+    l->count = 0;
+    l->cells = NULL;
+    return l;
+}
+
 lval_t *lval_num(double num) {
     lval_t *val = malloc(sizeof(lval_t));
     val->type = LVAL_NUM;
@@ -52,7 +59,9 @@ lval_t *lval_fun(lbuiltin f) {
     return val;
 }
 
-void lval_destroy(lval_t *val) {
+void lcell_list_del(lcell_list_t *);
+
+void lval_del(lval_t *val) {
     switch (val->type) {
         case LVAL_NUM: 
             break;
@@ -66,13 +75,17 @@ void lval_destroy(lval_t *val) {
             break;
         case LVAL_QEXPR:
         case LVAL_SEXPR:
-            for ( size_t i = 0; i < val->val.l->count; i++ ) {
-                lval_destroy(val->val.l->cells[i]);
-            }
-            free(val->val.l);
+            lcell_list_del(val->val.l);
             break;
     }
     free(val);
+}
+
+void lcell_list_del(lcell_list_t *l) {
+    for (size_t i = 0; i < l->count; ++i) {
+        lval_del(l->cells[i]);
+    }
+    free(l);
 }
 
 void lval_expr_print(lval_t *val, char prefix, char suffix) {
@@ -142,7 +155,7 @@ lval_t *lval_offer(lval_t *val, lval_t *other) {
 
     if ( resized == NULL ) {
         printf("Fatal memory error when trying reallocating for offer. Stopping.");
-        lval_destroy(val);
+        lval_del(val);
         exit(1);
     }
     val->val.l->cells = resized;
@@ -191,26 +204,23 @@ lval_t *lval_read(mpc_ast_t *t) {
 
 lval_t *lval_pop(lval_t *v, int i) {
     lval_t *x = v->val.l->cells[i];
-
-    memmove(&v->val.l->cells[i], &v->val.l->cells[i + 1], sizeof(lval_t *) * (v->val.l->count - i - 1));
-
+    memmove(v->val.l->cells + i, v->val.l->cells + (i + 1), sizeof(lval_t *) * (v->val.l->count - i - 1));
     v->val.l->count--;
-    lval_t **realloced = realloc(v->val.l->cells, sizeof(lval_t *) * v->val.l->count);
-    if ( realloced == NULL && v->val.l->count != 0 ) {
-        // since we always shrink the array we will hit count == 0 eventually,
-        // making the reallocated pointer some value that shouldn't be dereferenced
-        printf("Fatal memory error when trying reallocating for pop. Stopping.");
-        lval_destroy(v);
+    lval_t **cs = v->val.l->cells;
+    cs = realloc(cs, sizeof(lval_t *) * v->val.l->count);
+    if (!cs && v->val.l->count > 0) {
+        printf("Memory error");
+        lval_del(v);
         exit(1);
     }
-    v->val.l->cells = realloced;
+    v->val.l->cells = cs;
 
     return x;
 }
 
 lval_t *lval_take(lval_t *v, int i) {
     lval_t *x = lval_pop(v, i);
-    lval_destroy(v);
+    lval_del(v);
     return x;
 }
 
@@ -227,17 +237,18 @@ lval_t *lval_copy(lval_t *v) {
             x->val.num = v->val.num;
             break;
         case LVAL_ERR:
-            x->val.err = malloc((strlen(v->val.err) + 1) * sizeof(char)); /* copy */
+            x->val.err = calloc((strlen(v->val.err) + 1), sizeof(char));
             strcpy(x->val.err, v->val.err);
             break;
         case LVAL_SYM:
-            x->val.sym = malloc((strlen(v->val.sym) + 1) * sizeof(char));
+            x->val.sym = calloc((strlen(v->val.sym) + 1), sizeof(char));
             strcpy(x->val.sym, v->val.sym);
             break;
         case LVAL_SEXPR:
         case LVAL_QEXPR:
+            x->val.l = lcell_list_new();
             x->val.l->count = v->val.l->count;
-            x->val.l->cells = malloc(sizeof(lval_t *) * x->val.l->count);
+            x->val.l->cells = malloc(sizeof(lval_t *) * v->val.l->count);
             for ( size_t i = 0; i < x->val.l->count; ++i ) {
                 x->val.l->cells[i] = lval_copy(v->val.l->cells[i]);
             }

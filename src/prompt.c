@@ -43,7 +43,7 @@ void sigint_handler(int signum) {
     /* clean-up has to handled by SIGINT handler since we have while (1) */
     if ( signum == SIGINT ) {
         grammar_elems_destroy(&elems);
-        lenv_destroy(env);
+        lenv_del(env);
         printf("\nBye.\n");
         exit(0);
     }
@@ -60,7 +60,9 @@ void do_repl(void) {
 
     env = lenv_new();
     lenv_add_builtins(env);
-
+#ifdef _DEBUG
+    lenv_pretty_print(env);
+#endif
     grammar_elems_init(&elems);
     grammar_make_lang(&elems);
     signal(SIGINT, sigint_handler);
@@ -75,9 +77,10 @@ void do_repl(void) {
 #ifdef _DEBUG
             mpc_ast_print(r.output);
             putchar('\n');
+            lenv_pretty_print(env);
 #endif
             lval_println(val);
-            lval_destroy(val);
+            lval_del(val);
             mpc_ast_delete(r.output);
         } else {
             mpc_err_print(r.error);
