@@ -1,9 +1,6 @@
 CC=gcc
 SYMBOLS?=_ARCHLINUX # Arch linux symbol; replace with empty definition to compile for other linux / macOS
 CFLAGS=-std=c99 $(addprefix -D , ${SYMBOLS}) -Wall -Wextra -pedantic
-ifeq (${DEBUG}, 1) # use DEBUG=1 to enable debug symbols to be compiled in
-CFLAGS+=-g
-endif
 LDLIBS=-ledit -lm
 VPATH=src/
 OBJPATH=obj/
@@ -12,6 +9,13 @@ SRCS=grammar.c builtin.c prompt.c mpc.c lisper.c lval.c lenv.c
 OBJS=$(SRCS:%.c=${OBJPATH}%.o)
 HDRS=$(wildcard ${VPATH}*.h)
 TARGET?=lisper
+
+ifeq (${DEBUG}, 1) # use DEBUG=1 to enable debug symbols to be compiled in
+CFLAGS+=-g
+SYMBOLS+=_DEBUG
+endif
+
+.PHONY: all clean
 
 all: $(TARGET)
 
