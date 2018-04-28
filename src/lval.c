@@ -1,11 +1,12 @@
 #include "lval.h"
+#include "lenv.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-lcell_list_t *lcell_list_new(void) {
-    lcell_list_t *l = malloc(sizeof(lcell_list_t));;
+lcells_t *lcells_new(void) {
+    lcells_t *l = malloc(sizeof(lcells_t));;
     l->count = 0;
     l->cells = NULL;
     return l;
@@ -45,7 +46,7 @@ lval_t *lval_sym(char* sym) {
 lval_t *lval_sexpr(void) {
     lval_t *val = malloc(sizeof(lval_t));
     val->type = LVAL_SEXPR;
-    val->val.l = malloc(sizeof(lcell_list_t));
+    val->val.l = malloc(sizeof(lcells_t));
     val->val.l->count = 0;
     val->val.l->cells = NULL;
     return val;
@@ -54,26 +55,44 @@ lval_t *lval_sexpr(void) {
 lval_t *lval_qexpr(void) {
     lval_t *val = malloc(sizeof(lval_t));
     val->type = LVAL_QEXPR;
-    val->val.l = malloc(sizeof(lcell_list_t));
+    val->val.l = malloc(sizeof(lcells_t));
     val->val.l->count = 0;
     val->val.l->cells = NULL;
     return val;
 }
 
-lval_t *lval_fun(lbuiltin f) {
+lval_t *lval_builtin(lbuiltin f) {
     lval_t *val = malloc(sizeof(lval_t));
-    val->type = LVAL_FUN;
-    val->val.fun = f;
+    val->type = LVAL_BUILTIN;
+    val->val.builtin = f;
     return val;
 }
 
-void lcell_list_del(lcell_list_t *);
+lfunc_t *lfunc_new(lenv_t *env, lval_t *formals, lval_t *body) {
+    lfunc_t *new = malloc(sizeof(lfunc_t));
+    new->env = env;
+    new->formals = formals;
+    new->body = body;
+    return new;
+}
+
+lval_t *lval_lambda(lval_t *formals, lval_t *body) {
+    lval_t *nw = malloc(sizeof(lval_t));
+    nw->type = LVAL_LAMBDA;
+    nw->val.fun = lfunc_new(lenv_new(), formals, body);
+    return nw;
+}
+
+void lfunc_del(lfunc_t *);
+void lcells_del(lcells_t *);
 
 void lval_del(lval_t *val) {
     switch (val->type) {
-        case LVAL_NUM: 
+        case LVAL_LAMBDA:
+            lfunc_del(val->val.fun);
             break;
-        case LVAL_FUN:
+        case LVAL_NUM:
+        case LVAL_BUILTIN:
             break;
         case LVAL_ERR:
             free(val->val.err);
@@ -83,13 +102,19 @@ void lval_del(lval_t *val) {
             break;
         case LVAL_QEXPR:
         case LVAL_SEXPR:
-            lcell_list_del(val->val.l);
+            lcells_del(val->val.l);
             break;
     }
     free(val);
 }
 
-void lcell_list_del(lcell_list_t *l) {
+void lfunc_del(lfunc_t *f) {
+    lenv_del(f->env);
+    lval_del(f->formals);
+    lval_del(f->body);
+}
+
+void lcells_del(lcells_t *l) {
     for (size_t i = 0; i < l->count; ++i) {
         lval_del(l->cells[i]);
     }
@@ -127,8 +152,15 @@ void lval_print(lval_t *val) {
         case LVAL_QEXPR:
             lval_expr_print(val, '{', '}');
             break;
-        case LVAL_FUN:
-            printf("<function>");
+        case LVAL_LAMBDA:
+            printf("(\\ ");
+            lval_print(val->val.fun->formals);
+            putchar(' ');
+            lval_print(val->val.fun->body);
+            putchar(')');
+            break;
+        case LVAL_BUILTIN:
+            printf("<builtin>");
             break;
     }
 }
@@ -247,8 +279,15 @@ lval_t *lval_copy(lval_t *v) {
     x->type = v->type;
 
     switch(v->type) {
-        case LVAL_FUN: 
-            x->val.fun = v->val.fun;
+        case LVAL_LAMBDA:
+            x->val.fun = lfunc_new(
+                lenv_copy(v->val.fun->env),
+                lval_copy(v->val.fun->formals),
+                lval_copy(v->val.fun->body)
+            );
+            break;
+        case LVAL_BUILTIN:
+            x->val.builtin = v->val.builtin;
             break;
         case LVAL_NUM:
             x->val.num = v->val.num;
@@ -263,7 +302,7 @@ lval_t *lval_copy(lval_t *v) {
             break;
         case LVAL_SEXPR:
         case LVAL_QEXPR:
-            x->val.l = lcell_list_new();
+            x->val.l = lcells_new();
             x->val.l->count = v->val.l->count;
             x->val.l->cells = malloc(sizeof(lval_t *) * v->val.l->count);
             for ( size_t i = 0; i < x->val.l->count; ++i ) {
@@ -280,8 +319,10 @@ char *ltype_name(ltype t) {
     switch ( t ) {
         case LVAL_SYM:
             return "symbol";
-        case LVAL_FUN:
-            return "function";
+        case LVAL_BUILTIN:
+            return "builtin";
+        case LVAL_LAMBDA:
+            return "lambda";
         case LVAL_NUM:
             return "number";
         case LVAL_QEXPR:

@@ -28,7 +28,7 @@
 
 lval_t *builtin_op(lenv_t *e, lval_t *v, char *sym) {
     UNUSED(e);
-    lcell_list_t *c = v->val.l;
+    lcells_t *c = v->val.l;
 
     for ( size_t i = 0; i < c->count; i++ ) {
         if ( c->cells[i]->type != LVAL_NUM ) {
@@ -257,7 +257,7 @@ lval_t *builtin_exit(lenv_t *e, lval_t *v) {
 }
 
 lval_t *lval_eval_sexpr(lenv_t *e, lval_t *v) {
-    lcell_list_t *symc;
+    lcells_t *symc;
 
     /* depth-first eval of sexpr */
     symc = v->val.l;
@@ -282,17 +282,17 @@ lval_t *lval_eval_sexpr(lenv_t *e, lval_t *v) {
         return lval_take(v, 0);
     }
 
-    /* Symbolic expression was not defined by a symbol */
+    /* Symbolic expression was not defined by a builtin. TODO add support for lambdas */
     lval_t *f = lval_pop(v, 0);
-    if ( f->type != LVAL_FUN ) {
+    if ( f->type != LVAL_BUILTIN ) {
         char *t = ltype_name(f->type);
         lval_del(f);
         lval_del(v);
-        return lval_err("Expected first argument of %s to be of type '%s'; got '%s'.", ltype_name(LVAL_SEXPR), ltype_name(LVAL_FUN), t);
+        return lval_err("Expected first argument of %s to be of type '%s'; got '%s'.", ltype_name(LVAL_SEXPR), ltype_name(LVAL_BUILTIN), t);
     }
 
     /* Using builtins to compute expressions */
-    lval_t *res = f->val.fun(e, v);
+    lval_t *res = f->val.builtin(e, v);
     lval_del(f);
     return res;
 }

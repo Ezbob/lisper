@@ -1,6 +1,8 @@
 #include "lenv.h"
 #include <stdlib.h>
+#include <string.h>
 #include "builtin.h"
+#include "lval.h"
 
 #define LENV_BUILTIN(name) lenv_add_builtin(e, #name, builtin_##name)
 #define LENV_SYMBUILTIN(sym, name) lenv_add_builtin(e, #sym, builtin_##name)
@@ -24,9 +26,25 @@ void lenv_del(lenv_t *env) {
     free(env);
 }
 
+lenv_t *lenv_copy(lenv_t *env) {
+    lenv_t *new = lenv_new();
+
+    new->count = env->count;
+    new->syms = malloc(new->count * sizeof(char *));
+    new->vals = malloc(new->count * sizeof(lval_t *));
+
+    for ( size_t i = 0; i < new->count; ++i ) {
+        new->syms[i] = calloc( strlen(env->syms[i]) + 1, sizeof(char) );
+        strcpy(new->syms[i], env->syms[i]);
+        new->vals[i] = lval_copy(env->vals[i]);
+    }
+
+    return new;
+}
+
 void lenv_add_builtin(lenv_t *e, char *name, lbuiltin func) {
     lval_t *k = lval_sym(name);
-    lval_t *v = lval_fun(func);
+    lval_t *v = lval_builtin(func);
 
     lenv_put(e, k, v);
 

@@ -10,7 +10,8 @@ typedef enum ltype {
     LVAL_SYM,
     LVAL_SEXPR,
     LVAL_QEXPR,
-    LVAL_FUN
+    LVAL_BUILTIN,
+    LVAL_LAMBDA
 } ltype;
 
 struct lval_t; 
@@ -21,10 +22,16 @@ typedef struct lenv_t lenv_t;
 
 typedef lval_t *(*lbuiltin)(lenv_t *, lval_t *);
 
-typedef struct lcell_list_t {
+typedef struct lcells_t {
     size_t count;
     struct lval_t **cells;
-} lcell_list_t;
+} lcells_t;
+
+typedef struct lfunc_t {
+    lenv_t *env;
+    lval_t *formals;
+    lval_t *body;
+} lfunc_t;
 
 struct lval_t {
     ltype type;
@@ -32,8 +39,9 @@ struct lval_t {
         double num;
         char *err;
         char *sym;
-        lcell_list_t *l;
-        lbuiltin fun;
+        lcells_t *l;
+        lbuiltin builtin;
+        lfunc_t *fun;
     } val;
 };
 
@@ -47,9 +55,10 @@ void lval_del(lval_t *);
 lval_t *lval_err(char *, ...);
 lval_t *lval_num(double);
 lval_t *lval_sym(char *);
-lval_t *lval_fun(lbuiltin);
+lval_t *lval_builtin(lbuiltin);
 lval_t *lval_sexpr(void);
 lval_t *lval_qexpr(void);
+lval_t *lval_lambda(lval_t *, lval_t *);
 
 /* lval transformers */
 lval_t *lval_add(lval_t *, lval_t *);
