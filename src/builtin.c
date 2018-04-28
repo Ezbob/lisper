@@ -306,9 +306,10 @@ lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
     size_t total = formals->count;
 
     while ( args->count > 0 ) {
-
+ 
         if ( formals->count == 0 &&
             args->cells[0]->type != LVAL_SEXPR ) {
+            /* Error case: non-symbolic parameter parsed */
             lval_del(v);
             return lval_err(
                 "Function passed too many arguments; "
@@ -319,12 +320,31 @@ lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
         } else if ( formals->count == 0 &&
             args->cells[0]->type == LVAL_SEXPR &&
             args->cells[0]->val.l->count == 0 ) {
-            /* empty sexpr to zero parameter function just calls it */
+            /* Function with no parameters case: can be called with a empty sexpr */
             break;
         }
 
-        lval_t *sym = lval_pop(func->formals, 0);
-        lval_t *val = lval_pop(v, 0);
+        lval_t *sym = lval_pop(func->formals, 0); /* unbound name */
+
+        if ( strcmp(sym->val.sym, "&") == 0 ) {
+            /* Variable argument case with '&' */
+            if ( func->formals->val.l->count != 1 ) {
+                lval_del(v);
+                return lval_err(
+                    "Function format invalid. "
+                    "Symbol '&' not followed by a single symbol."
+                );
+            }
+
+            /* Binding rest of the arguments to nsym */
+            lval_t *nsym = lval_pop(func->formals, 0);
+            lenv_put(func->env, nsym, builtin_list(e, v));
+            lval_del(sym);
+            lval_del(nsym);
+            break;
+        }
+
+        lval_t *val = lval_pop(v, 0); /* value to appy to unbound name */
 
         lenv_put(func->env, sym, val);
         lval_del(sym);
@@ -332,6 +352,29 @@ lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
     }
 
     lval_del(v);
+
+    if ( func->formals->val.l->count > 0 &&
+            strcmp(func->formals->val.l->cells[0]->val.sym, "&") == 0 ) {
+        /* only first non-variable arguments was applied; create a empty qexpr  */
+
+        if ( func->formals->val.l->count != 2 ) {
+            return lval_err(
+                    "Function format invalid. "
+                    "Symbol '&' not followed by single symbol."
+                    );
+        }
+
+        /* Remove '&' */
+        lval_del(lval_pop(func->formals, 0));
+
+        /* Create a empty list for the next symbol */
+        lval_t *sym = lval_pop(func->formals, 0);
+        lval_t *val = lval_qexpr();
+
+        lenv_put(func->env, sym, val);
+        lval_del(sym);
+        lval_del(val);
+    }
 
     if ( formals->count == 0 ) {
         func->env->parent = e;

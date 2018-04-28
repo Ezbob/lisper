@@ -329,6 +329,8 @@ char *ltype_name(ltype t) {
             return "q-expression";
         case LVAL_SEXPR:
             return "s-expression";
+        case LVAL_ERR:
+            return "error";
         default:
             break;
     }
