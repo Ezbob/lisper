@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 struct lenv_t {
+    struct lenv_t *parent;
     size_t count;
     char** syms;
     lval_t** vals;
@@ -14,6 +15,7 @@ lenv_t *lenv_new(void);
 void lenv_del(lenv_t *);
 lenv_t *lenv_copy(lenv_t *);
 lval_t *lenv_get(lenv_t *, lval_t *);
+void lenv_def(lenv_t *, lval_t *, lval_t *);
 void lenv_put(lenv_t *, lval_t *, lval_t *);
 void lenv_add_builtin(lenv_t *, char *, lbuiltin);
 void lenv_add_builtins(lenv_t *);

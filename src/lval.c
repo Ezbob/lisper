@@ -31,7 +31,6 @@ lval_t *lval_err(char *fmt, ...) {
     val->val.err = realloc(val->val.err, strlen(val->val.err) + 1);
 
     va_end(va); 
-
     return val;
 }
 
@@ -88,11 +87,11 @@ void lcells_del(lcells_t *);
 
 void lval_del(lval_t *val) {
     switch (val->type) {
-        case LVAL_LAMBDA:
-            lfunc_del(val->val.fun);
-            break;
         case LVAL_NUM:
         case LVAL_BUILTIN:
+            break;
+        case LVAL_LAMBDA:
+            lfunc_del(val->val.fun);
             break;
         case LVAL_ERR:
             free(val->val.err);
@@ -112,6 +111,7 @@ void lfunc_del(lfunc_t *f) {
     lenv_del(f->env);
     lval_del(f->formals);
     lval_del(f->body);
+    free(f);
 }
 
 void lcells_del(lcells_t *l) {
