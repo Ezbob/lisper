@@ -39,7 +39,7 @@ struct lval_t {
         double num;
         char *err;
         char *sym;
-        lcells_t *l;
+        lcells_t l;
         lbuiltin builtin;
         lfunc_t *fun;
     } val;

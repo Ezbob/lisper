@@ -27,6 +27,7 @@ lval_t *builtin_def(lenv_t *, lval_t *);
 lval_t *builtin_exit(lenv_t *, lval_t *);
 lval_t *builtin_lambda(lenv_t *, lval_t *);
 lval_t *builtin_put(lenv_t *, lval_t *);
+lval_t *builtin_fun(lenv_t *, lval_t *);
 
 #endif
 

@@ -67,6 +67,7 @@ void lenv_add_builtins(lenv_t *e) {
     LENV_BUILTIN(exit);
     LENV_BUILTIN(max);
     LENV_BUILTIN(min);
+    LENV_BUILTIN(fun);
 
     LENV_SYMBUILTIN("+", add);
     LENV_SYMBUILTIN("-", sub);
@@ -96,9 +97,10 @@ lval_t *lenv_get(lenv_t *e, lval_t *k) {
 void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
 
     for ( size_t i = 0; i < e->count; ++i ) {
+        /* linear search for sym name */
         if ( strcmp(e->syms[i], k->val.sym) == 0 ) {
             lval_del(e->vals[i]);
-            e->vals[i] = lval_copy(v);
+            e->vals[i] = lval_copy(v); /* override already existing value */
             return;
         }
     }

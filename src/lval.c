@@ -5,13 +5,6 @@
 #include <string.h>
 #include <math.h>
 
-lcells_t *lcells_new(void) {
-    lcells_t *l = malloc(sizeof(lcells_t));;
-    l->count = 0;
-    l->cells = NULL;
-    return l;
-}
-
 lval_t *lval_num(double num) {
     lval_t *val = malloc(sizeof(lval_t));
     val->type = LVAL_NUM;
@@ -45,18 +38,16 @@ lval_t *lval_sym(char* sym) {
 lval_t *lval_sexpr(void) {
     lval_t *val = malloc(sizeof(lval_t));
     val->type = LVAL_SEXPR;
-    val->val.l = malloc(sizeof(lcells_t));
-    val->val.l->count = 0;
-    val->val.l->cells = NULL;
+    val->val.l.count = 0;
+    val->val.l.cells = NULL;
     return val;
 }
 
 lval_t *lval_qexpr(void) {
     lval_t *val = malloc(sizeof(lval_t));
     val->type = LVAL_QEXPR;
-    val->val.l = malloc(sizeof(lcells_t));
-    val->val.l->count = 0;
-    val->val.l->cells = NULL;
+    val->val.l.count = 0;
+    val->val.l.cells = NULL;
     return val;
 }
 
@@ -83,7 +74,6 @@ lval_t *lval_lambda(lval_t *formals, lval_t *body) {
 }
 
 void lfunc_del(lfunc_t *);
-void lcells_del(lcells_t *);
 
 void lval_del(lval_t *val) {
     switch (val->type) {
@@ -101,7 +91,9 @@ void lval_del(lval_t *val) {
             break;
         case LVAL_QEXPR:
         case LVAL_SEXPR:
-            lcells_del(val->val.l);
+            for ( size_t i = 0; i < val->val.l.count; ++i ) {
+                lval_del(val->val.l.cells[i]);
+            }
             break;
     }
     free(val);
@@ -114,20 +106,13 @@ void lfunc_del(lfunc_t *f) {
     free(f);
 }
 
-void lcells_del(lcells_t *l) {
-    for (size_t i = 0; i < l->count; ++i) {
-        lval_del(l->cells[i]);
-    }
-    free(l);
-}
-
 void lval_expr_print(lval_t *val, char prefix, char suffix) {
     putchar(prefix);
     
-    for ( size_t i = 0; i < val->val.l->count; i++ ) {
-        lval_print(val->val.l->cells[i]);
+    for ( size_t i = 0; i < val->val.l.count; i++ ) {
+        lval_print(val->val.l.cells[i]);
 
-        if ( i != ( val->val.l->count - 1 ) ) {
+        if ( i != ( val->val.l.count - 1 ) ) {
             putchar(' ');
         }
     }
@@ -182,15 +167,22 @@ lval_t *lval_read_num(mpc_ast_t *t) {
 }
 
 lval_t *lval_add(lval_t *val, lval_t *other) {
-    val->val.l->count++;
-    val->val.l->cells = realloc(val->val.l->cells, sizeof(lval_t *) * val->val.l->count);
-    val->val.l->cells[val->val.l->count - 1] = other;
+    val->val.l.count++;
+    lval_t **resized_cells = realloc(val->val.l.cells, val->val.l.count * sizeof(lval_t *));
+    if ( resized_cells == NULL ) {
+        lval_del(val);
+        lval_del(other);
+        perror("Could not resize lval cell buffer"); 
+        exit(1);
+    }
+    resized_cells[val->val.l.count - 1] = other;
+    val->val.l.cells = resized_cells;
     return val;
 }
 
 lval_t *lval_offer(lval_t *val, lval_t *other) {
-    val->val.l->count++;
-    lval_t **resized = realloc(val->val.l->cells, sizeof(lval_t *) * val->val.l->count);
+    val->val.l.count++;
+    lval_t **resized = realloc(val->val.l.cells, val->val.l.count * sizeof(lval_t*));
         // resize the memory buffer to carry another cell
 
     if ( resized == NULL ) {
@@ -198,18 +190,18 @@ lval_t *lval_offer(lval_t *val, lval_t *other) {
         lval_del(val);
         exit(1);
     }
-    val->val.l->cells = resized;
-    memmove(val->val.l->cells + 1, val->val.l->cells, sizeof(lval_t *) * ( val->val.l->count - 1 ) );
-        // move memory at address val->val.l->cells (op to old count of cells) to addr val->val.l->cells[1]
+    val->val.l.cells = resized;
+    memmove(val->val.l.cells + 1, val->val.l.cells, (val->val.l.count - 1) * sizeof(lval_t*));
+        // move memory at address val->val.l.cells (op to old count of cells) to addr val->val.l.cells[1]
 
-    val->val.l->cells[0] = other;
+    val->val.l.cells[0] = other;
         // insert into the front of the array
 
     return val;
 }
 
 lval_t *lval_join(lval_t *x, lval_t *y) {
-    while ( y->val.l->count ) {
+    while ( y->val.l.count ) {
         x = lval_add(x, lval_pop(y, 0));
     }
 
@@ -252,17 +244,17 @@ lval_t *lval_read(mpc_ast_t *t) {
 }
 
 lval_t *lval_pop(lval_t *v, int i) {
-    lval_t *x = v->val.l->cells[i];
-    memmove(v->val.l->cells + i, v->val.l->cells + (i + 1), sizeof(lval_t *) * (v->val.l->count - i - 1));
-    v->val.l->count--;
-    lval_t **cs = v->val.l->cells;
-    cs = realloc(cs, sizeof(lval_t *) * v->val.l->count);
-    if (!cs && v->val.l->count > 0) {
+    lval_t *x = v->val.l.cells[i];
+    memmove(v->val.l.cells + i, v->val.l.cells + (i + 1), sizeof(lval_t *) * (v->val.l.count - i - 1));
+    v->val.l.count--;
+
+    lval_t **cs = realloc(v->val.l.cells, v->val.l.count * sizeof(lval_t *));
+    if ( !cs && v->val.l.count > 0 ) {
         perror("Could not shrink cell buffer");
         lval_del(v);
         exit(1);
     }
-    v->val.l->cells = cs;
+    v->val.l.cells = cs;
 
     return x;
 }
@@ -302,11 +294,10 @@ lval_t *lval_copy(lval_t *v) {
             break;
         case LVAL_SEXPR:
         case LVAL_QEXPR:
-            x->val.l = lcells_new();
-            x->val.l->count = v->val.l->count;
-            x->val.l->cells = malloc(sizeof(lval_t *) * v->val.l->count);
-            for ( size_t i = 0; i < x->val.l->count; ++i ) {
-                x->val.l->cells[i] = lval_copy(v->val.l->cells[i]);
+            x->val.l.count = v->val.l.count;
+            x->val.l.cells = malloc(v->val.l.count * sizeof(lval_t *));
+            for ( size_t i = 0; i < x->val.l.count; ++i ) {
+                x->val.l.cells[i] = lval_copy(v->val.l.cells[i]);
             }
             break;
     }
