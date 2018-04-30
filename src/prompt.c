@@ -74,6 +74,9 @@ void do_repl(void) {
 
         if ( mpc_parse("<stdin>", input, elems.Lisper, &r) ) {
             lval_t *read = lval_read(r.output);
+#ifdef _DEBUG
+            lval_pretty_print(read);
+#endif
             val = lval_eval(env, read);
 #ifdef _DEBUG
             mpc_ast_print(r.output);

@@ -305,7 +305,6 @@ lval_t *lval_copy(lval_t *v) {
     return x;
 }
 
-
 char *ltype_name(ltype t) {
     switch ( t ) {
         case LVAL_SYM:
@@ -326,5 +325,44 @@ char *ltype_name(ltype t) {
             break;
     }
     return "Unknown";
+}
+
+void lval_depth_print(lval_t *v, size_t depth) {
+ 
+    for ( size_t i = 0; i < depth; ++i ) {
+        putchar(' ');
+    }
+
+    printf("`-t: %s = ", ltype_name(v->type));
+
+    switch ( v->type ) {
+        case LVAL_SYM:
+            printf("'%s'\n", v->val.sym);
+            break;
+        case LVAL_BUILTIN:
+            printf("builtin\n");
+            break;
+        case LVAL_LAMBDA:
+            printf("%p\n", (void *) v->val.fun);
+            break;
+        case LVAL_NUM:
+            printf("%lf\n", v->val.num );
+            break;
+        case LVAL_ERR:
+            printf("Error: %s\n", v->val.err);
+            break;
+        case LVAL_QEXPR:
+        case LVAL_SEXPR:
+            putchar('\n');
+            for ( size_t i = 0; i < v->val.l.count; ++i ) {
+                lval_depth_print(v->val.l.cells[i], depth + 1);
+            }
+            break;
+    }
+
+}
+
+void lval_pretty_print(lval_t *v) {
+    lval_depth_print(v, 0);
 }
 
