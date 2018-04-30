@@ -322,6 +322,86 @@ lval_t *builtin_fun(lenv_t *e, lval_t*v) {
     return lval_sexpr();
 }
 
+lval_t *builtin_ord(lenv_t *e, lval_t *v, char *sym);
+
+lval_t *builtin_lt(lenv_t *e, lval_t *v) {
+    return builtin_ord(e, v, "<");
+}
+
+lval_t *builtin_gt(lenv_t *e, lval_t *v) {
+    return builtin_ord(e, v, ">");
+}
+
+lval_t *builtin_le(lenv_t *e, lval_t *v) {
+    return builtin_ord(e, v, "<=");
+}
+
+lval_t *builtin_ge(lenv_t *e, lval_t *v) {
+    return builtin_ord(e, v, ">=");
+}
+
+lval_t *builtin_ord(lenv_t *e, lval_t *v, char *sym) {
+    UNUSED(e);
+    LEXACT_ARGS(v, sym, 2);
+    LARG_TYPE(v, sym, 0, LVAL_NUM);
+    LARG_TYPE(v, sym, 1, LVAL_NUM);
+
+    lval_t *lhs = v->val.l.cells[0];
+    lval_t *rhs = v->val.l.cells[1];
+
+    double res = 0.0;
+    if ( strcmp(sym, "<") == 0 ) {
+        res = (lhs->val.num < rhs->val.num);
+    } else if ( strcmp(sym, ">") == 0 ) {
+        res = (lhs->val.num > rhs->val.num);
+    } else if ( strcmp(sym, "<=") == 0 ) {
+        res = (lhs->val.num <= rhs->val.num);
+    } else if ( strcmp(sym, ">=") == 0 ) {
+        res = (lhs->val.num >= rhs->val.num);
+    }
+
+    lval_del(v);
+    return lval_num(res);
+}
+
+lval_t *builtin_cmp(lenv_t *e, lval_t *v, char *sym) {
+    UNUSED(e);
+    LEXACT_ARGS(v, sym, 2);
+
+    lval_t *lhs = v->val.l.cells[0];
+    lval_t *rhs = v->val.l.cells[1];
+
+    double res = 0.0;
+    if ( strcmp(sym, "==") == 0 ) {
+        res = lval_eq(lhs, rhs);
+    } else if ( strcmp(sym, "!=") == 0 ) {
+        res = !lval_eq(lhs, rhs);
+    }
+
+    lval_del(v);
+    return lval_num(res);
+}
+
+lval_t *builtin_eq(lenv_t *e, lval_t *v) {
+    return builtin_cmp(e, v, "==");
+}
+
+lval_t *builtin_ne(lenv_t *e, lval_t *v) {
+    return builtin_cmp(e, v, "!=");
+}
+
+lval_t *builtin_if(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LEXACT_ARGS(v, "if", 3);
+    LARG_TYPE(v, "if", 0, LVAL_QEXPR);
+    LARG_TYPE(v, "if", 1, LVAL_QEXPR);
+    LARG_TYPE(v, "if", 2, LVAL_QEXPR);
+
+    /* TODO make some kind of ording / equality op  */
+
+    return NULL;
+}
+
 lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
 
     if ( f->type == LVAL_BUILTIN ) {

@@ -67,6 +67,7 @@ lval_t *lval_join(lval_t *, lval_t *);
 lval_t *lval_pop(lval_t *, int);
 lval_t *lval_take(lval_t *, int); /* same as pop except frees input lval */
 lval_t *lval_copy(lval_t *);
+int lval_eq(lval_t *, lval_t *);
 
 char *ltype_name(ltype);
 void lval_pretty_print(lval_t *);

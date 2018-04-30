@@ -305,6 +305,38 @@ lval_t *lval_copy(lval_t *v) {
     return x;
 }
 
+int lval_eq(lval_t *x, lval_t *y) {
+    if ( x->type != y->type ) {
+        return 0;
+    }
+
+    switch ( x->type ) {
+        case LVAL_NUM:
+            return (x->val.num == y->val.num);
+        case LVAL_ERR:
+            return (strcmp(x->val.err, y->val.err) == 0);
+        case LVAL_SYM:
+            return (strcmp(x->val.sym, y->val.sym) == 0);
+        case LVAL_BUILTIN:
+            return (x->val.builtin == y->val.builtin);
+        case LVAL_LAMBDA:
+            return lval_eq(x->val.fun->formals, y->val.fun->formals) &&
+                 lval_eq(x->val.fun->body, y->val.fun->body);
+        case LVAL_QEXPR:
+        case LVAL_SEXPR:
+            if ( x->val.l.count != y->val.l.count ) {
+                return 0;
+            }
+            for ( size_t i = 0; i < x->val.l.count; ++i ) {
+                if ( !lval_eq(x->val.l.cells[i], y->val.l.cells[i]) ) {
+                    return 0;
+                }
+            }
+            return 1;
+    }
+    return 0;
+}
+
 char *ltype_name(ltype t) {
     switch ( t ) {
         case LVAL_SYM:
