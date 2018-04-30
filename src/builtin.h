@@ -29,5 +29,15 @@ lval_t *builtin_lambda(lenv_t *, lval_t *);
 lval_t *builtin_put(lenv_t *, lval_t *);
 lval_t *builtin_fun(lenv_t *, lval_t *);
 
+lval_t *builtin_eq(lenv_t *, lval_t *);
+lval_t *builtin_ne(lenv_t *, lval_t *);
+
+lval_t *builtin_le(lenv_t *, lval_t *);
+lval_t *builtin_lt(lenv_t *, lval_t *);
+
+lval_t *builtin_ge(lenv_t *, lval_t *);
+lval_t *builtin_gt(lenv_t *, lval_t *);
+lval_t *builtin_if(lenv_t *, lval_t *);
+
 #endif
 

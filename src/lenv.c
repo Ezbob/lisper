@@ -68,6 +68,7 @@ void lenv_add_builtins(lenv_t *e) {
     LENV_BUILTIN(max);
     LENV_BUILTIN(min);
     LENV_BUILTIN(fun);
+    LENV_BUILTIN(if);
 
     LENV_SYMBUILTIN("+", add);
     LENV_SYMBUILTIN("-", sub);
@@ -77,6 +78,14 @@ void lenv_add_builtins(lenv_t *e) {
     LENV_SYMBUILTIN("^", pow);
     LENV_SYMBUILTIN("\\", lambda);
     LENV_SYMBUILTIN("=", put);
+
+    LENV_SYMBUILTIN("==", eq);
+    LENV_SYMBUILTIN("!=", ne);
+
+    LENV_SYMBUILTIN(">", gt);
+    LENV_SYMBUILTIN("<", lt);
+    LENV_SYMBUILTIN(">=", le);
+    LENV_SYMBUILTIN("<=", ge);
 }
 
 lval_t *lenv_get(lenv_t *e, lval_t *k) {

@@ -231,7 +231,7 @@ lval_t *builtin_exit(lenv_t *e, lval_t *v) {
     lenv_del(e);
     exit(exit_code);
 
-    return NULL;
+    return lval_sexpr();
 }
 
 lval_t *builtin_lambda(lenv_t *e, lval_t *v) {
@@ -268,7 +268,6 @@ lval_t *builtin_put(lenv_t *e, lval_t *v) {
 }
 
 lval_t *builtin_var(lenv_t *e, lval_t *v, char *sym) {
-    LEXACT_ARGS(v, sym, 2);
     LARG_TYPE(v, sym, 0, LVAL_QEXPR);
 
     lval_t *names = v->val.l.cells[0];
@@ -351,9 +350,9 @@ lval_t *builtin_ord(lenv_t *e, lval_t *v, char *sym) {
 
     double res = 0.0;
     if ( strcmp(sym, "<") == 0 ) {
-        res = (lhs->val.num < rhs->val.num);
+        res = (lhs->val.num <  rhs->val.num);
     } else if ( strcmp(sym, ">") == 0 ) {
-        res = (lhs->val.num > rhs->val.num);
+        res = (lhs->val.num >  rhs->val.num);
     } else if ( strcmp(sym, "<=") == 0 ) {
         res = (lhs->val.num <= rhs->val.num);
     } else if ( strcmp(sym, ">=") == 0 ) {
@@ -393,13 +392,21 @@ lval_t *builtin_ne(lenv_t *e, lval_t *v) {
 lval_t *builtin_if(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LEXACT_ARGS(v, "if", 3);
-    LARG_TYPE(v, "if", 0, LVAL_QEXPR);
+    LARG_TYPE(v, "if", 0, LVAL_NUM);
     LARG_TYPE(v, "if", 1, LVAL_QEXPR);
     LARG_TYPE(v, "if", 2, LVAL_QEXPR);
 
-    /* TODO make some kind of ording / equality op  */
+    lval_t *res = NULL;
+    lval_t *cond = v->val.l.cells[0];
 
-    return NULL;
+    if ( cond->val.num ) {
+        res = lval_eval(e, lval_pop(v, 1));
+    } else {
+        res = lval_eval(e, lval_pop(v, 2));
+    }
+
+    lval_del(v);
+    return res;
 }
 
 lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
