@@ -5,7 +5,8 @@
 #include <stdlib.h>
 
 typedef enum ltype {
-    LVAL_NUM,
+    LVAL_INT,
+    LVAL_FLOAT,
     LVAL_ERR,
     LVAL_SYM,
     LVAL_SEXPR,
@@ -36,7 +37,8 @@ typedef struct lfunc_t {
 struct lval_t {
     ltype type;
     union val {
-        double num;
+        double floatval;
+        long long intval;
         char *err;
         char *sym;
         lcells_t l;
@@ -53,7 +55,8 @@ void lval_del(lval_t *);
 
 /* lval constructors */
 lval_t *lval_err(char *, ...);
-lval_t *lval_num(double);
+lval_t *lval_float(double);
+lval_t *lval_int(long long);
 lval_t *lval_sym(char *);
 lval_t *lval_builtin(lbuiltin);
 lval_t *lval_sexpr(void);
@@ -73,5 +76,4 @@ char *ltype_name(ltype);
 void lval_pretty_print(lval_t *);
 
 #endif
-
 

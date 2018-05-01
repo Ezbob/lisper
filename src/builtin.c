@@ -7,6 +7,8 @@
 
 #define UNUSED(x) (void)(x)
 
+#define LIS_NUM(type) (type == LVAL_INT || type == LVAL_FLOAT)
+
 #define LASSERT(args, cond, fmt, ...) \
     if ( !(cond) ) { lval_t *err = lval_err(fmt, ##__VA_ARGS__); lval_del(args); return err;  }
 
@@ -30,7 +32,7 @@ lval_t *builtin_op(lenv_t *e, lval_t *v, char *sym) {
     UNUSED(e);
 
     for ( size_t i = 0; i < v->val.l.count; i++ ) {
-        if ( v->val.l.cells[i]->type != LVAL_NUM ) {
+        if ( !LIS_NUM(v->val.l.cells[i]->type) ) {
             lval_t *err = lval_err("Cannot operate on argument %lu. Non-number type '%s' parsed to %s.", i + 1, ltype_name(v->val.l.cells[i]->type), sym);
             lval_del(v);
             return err;
@@ -39,46 +41,91 @@ lval_t *builtin_op(lenv_t *e, lval_t *v, char *sym) {
 
     lval_t *a = lval_pop(v, 0);
 
-    if ( strcmp(sym, "-") == 0 && v->val.l.count == 0 ) {
-        a->val.num = -a->val.num;
-    }
-
-    while ( v->val.l.count > 0 ) {
-
-        lval_t *b = lval_pop(v, 0);
-
-        if ( strcmp(sym, "+") == 0 ) {
-            a->val.num += b->val.num;
-        } else if ( strcmp(sym, "-") == 0 ) {
-            a->val.num -= b->val.num;
-        } else if ( strcmp(sym, "*") == 0 ) {
-            a->val.num *= b->val.num;
-        } else if ( strcmp(sym, "/") == 0 ) {
-            if ( b->val.num == 0 ) {
-                lval_del(a);
-                lval_del(b);
-                a = lval_err("Division by zero");
-                break;
-            }
-            a->val.num /= b->val.num;
-        } else if ( strcmp(sym, "%") == 0 ) {
-            if ( b->val.num == 0 ) {
-                lval_del(a);
-                lval_del(b);
-                a = lval_err("Division by zero");
-                break;
-            }
-            a->val.num = fmod(a->val.num, b->val.num);
-        } else if ( strcmp(sym, "min") == 0 ) {
-            if ( a->val.num > b->val.num ) {
-                a->val.num = b->val.num;
-            }
-        } else if ( strcmp(sym, "max") == 0 )  {
-            if ( a->val.num < b->val.num ) {
-                a->val.num = b->val.num;
-            }
+    if ( a->type == LVAL_INT ) {
+        /* int val */
+        if ( strcmp(sym, "-") == 0 && v->val.l.count == 0 ) {
+            a->val.intval = -a->val.intval;
         }
-        lval_del(b);
+
+        while ( v->val.l.count > 0 ) {
+            lval_t *b = lval_pop(v, 0);
+
+            if ( strcmp(sym, "+") == 0 ) {
+                a->val.intval += b->val.intval;
+            } else if ( strcmp(sym, "-") == 0 ) {
+                a->val.intval -= b->val.intval;
+            } else if ( strcmp(sym, "*") == 0 ) {
+                a->val.intval *= b->val.intval;
+            } else if ( strcmp(sym, "/") == 0 ) {
+                if ( b->val.intval == 0 ) {
+                    lval_del(a);
+                    lval_del(b);
+                    a = lval_err("Division by zero");
+                    break;
+                }
+                a->val.intval /= b->val.intval;
+            } else if ( strcmp(sym, "%") == 0 ) {
+                if ( b->val.intval == 0 ) {
+                    lval_del(a);
+                    lval_del(b);
+                    a = lval_err("Division by zero");
+                    break;
+                }
+                a->val.intval %= b->val.intval;
+            } else if ( strcmp(sym, "min") == 0 ) {
+                if ( a->val.intval > b->val.intval ) {
+                    a->val.intval = b->val.intval;
+                }
+            } else if ( strcmp(sym, "max") == 0 )  {
+                if ( a->val.intval < b->val.intval ) {
+                    a->val.intval = b->val.intval;
+                }
+            }
+            lval_del(b);
+        }
+
+    } else {
+        /* Floating point */
+        if ( strcmp(sym, "-") == 0 && v->val.l.count == 0 ) {
+            a->val.floatval = -a->val.floatval;
+        }
+
+        while ( v->val.l.count > 0 ) {
+            lval_t *b = lval_pop(v, 0);
+
+            if ( strcmp(sym, "+") == 0 ) {
+                a->val.floatval += b->val.floatval;
+            } else if ( strcmp(sym, "-") == 0 ) {
+                a->val.floatval -= b->val.floatval;
+            } else if ( strcmp(sym, "*") == 0 ) {
+                a->val.floatval *= b->val.floatval;
+            } else if ( strcmp(sym, "/") == 0 ) {
+                if ( b->val.floatval == 0 ) {
+                    lval_del(a);
+                    lval_del(b);
+                    a = lval_err("Division by zero");
+                    break;
+                }
+                a->val.floatval /= b->val.floatval;
+            } else if ( strcmp(sym, "%") == 0 ) {
+                if ( b->val.floatval == 0 ) {
+                    lval_del(a);
+                    lval_del(b);
+                    a = lval_err("Division by zero");
+                    break;
+                }
+                a->val.floatval = fmod(a->val.floatval, b->val.floatval);
+            } else if ( strcmp(sym, "min") == 0 ) {
+                if ( a->val.floatval > b->val.floatval ) {
+                    a->val.floatval = b->val.floatval;
+                }
+            } else if ( strcmp(sym, "max") == 0 )  {
+                if ( a->val.floatval < b->val.floatval ) {
+                    a->val.floatval = b->val.floatval;
+                }
+            }
+            lval_del(b);
+        }
     }
 
     lval_del(v);
@@ -201,8 +248,8 @@ lval_t *builtin_len(lenv_t *e, lval_t *v) {
         lval_del(lval_pop(arg, 0));
     }
 
-    arg->type = LVAL_NUM;
-    arg->val.num = ( (double) count ); // we only have double defined as numbers
+    arg->type = LVAL_INT;
+    arg->val.intval = ( (long long) count ); // we only have double defined as numbers
     lval_del(v);
 
     return arg;
@@ -224,9 +271,10 @@ lval_t *builtin_init(lenv_t *e, lval_t *v) {
 lval_t *builtin_exit(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LEXACT_ARGS(v, "exit", 1);
-    LARG_TYPE(v, "exit", 0, LVAL_NUM);
+    LARG_TYPE(v, "exit", 0, LVAL_INT);
 
-    int exit_code = floor(v->val.l.cells[0]->val.num);
+    int exit_code = (int) (v->val.l.cells[0]->val.intval);
+    /* TODO MORE CLEAN UP NEEDED */
     lval_del(v);
     lenv_del(e);
     exit(exit_code);
@@ -342,25 +390,25 @@ lval_t *builtin_ge(lenv_t *e, lval_t *v) {
 lval_t *builtin_ord(lenv_t *e, lval_t *v, char *sym) {
     UNUSED(e);
     LEXACT_ARGS(v, sym, 2);
-    LARG_TYPE(v, sym, 0, LVAL_NUM);
-    LARG_TYPE(v, sym, 1, LVAL_NUM);
+    LARG_TYPE(v, sym, 0, LVAL_INT);
+    LARG_TYPE(v, sym, 1, LVAL_INT);
 
     lval_t *lhs = v->val.l.cells[0];
     lval_t *rhs = v->val.l.cells[1];
 
-    double res = 0.0;
+    long long res = 0;
     if ( strcmp(sym, "<") == 0 ) {
-        res = (lhs->val.num <  rhs->val.num);
+        res = (lhs->val.intval < rhs->val.intval);
     } else if ( strcmp(sym, ">") == 0 ) {
-        res = (lhs->val.num >  rhs->val.num);
+        res = (lhs->val.intval > rhs->val.intval);
     } else if ( strcmp(sym, "<=") == 0 ) {
-        res = (lhs->val.num <= rhs->val.num);
+        res = (lhs->val.intval <= rhs->val.intval);
     } else if ( strcmp(sym, ">=") == 0 ) {
-        res = (lhs->val.num >= rhs->val.num);
+        res = (lhs->val.intval >= rhs->val.intval);
     }
 
     lval_del(v);
-    return lval_num(res);
+    return lval_int(res);
 }
 
 lval_t *builtin_cmp(lenv_t *e, lval_t *v, char *sym) {
@@ -370,7 +418,7 @@ lval_t *builtin_cmp(lenv_t *e, lval_t *v, char *sym) {
     lval_t *lhs = v->val.l.cells[0];
     lval_t *rhs = v->val.l.cells[1];
 
-    double res = 0.0;
+    long long res = 0;
     if ( strcmp(sym, "==") == 0 ) {
         res = lval_eq(lhs, rhs);
     } else if ( strcmp(sym, "!=") == 0 ) {
@@ -378,7 +426,7 @@ lval_t *builtin_cmp(lenv_t *e, lval_t *v, char *sym) {
     }
 
     lval_del(v);
-    return lval_num(res);
+    return lval_int(res);
 }
 
 lval_t *builtin_eq(lenv_t *e, lval_t *v) {
@@ -392,14 +440,14 @@ lval_t *builtin_ne(lenv_t *e, lval_t *v) {
 lval_t *builtin_if(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LEXACT_ARGS(v, "if", 3);
-    LARG_TYPE(v, "if", 0, LVAL_NUM);
+    LARG_TYPE(v, "if", 0, LVAL_INT);
     LARG_TYPE(v, "if", 1, LVAL_QEXPR);
     LARG_TYPE(v, "if", 2, LVAL_QEXPR);
 
     lval_t *res = NULL;
     lval_t *cond = v->val.l.cells[0];
 
-    if ( cond->val.num ) {
+    if ( cond->val.intval ) {
         res = lval_eval(e, lval_pop(v, 1));
     } else {
         res = lval_eval(e, lval_pop(v, 2));

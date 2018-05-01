@@ -5,10 +5,17 @@
 #include <string.h>
 #include <math.h>
 
-lval_t *lval_num(double num) {
+lval_t *lval_int(long long num) {
     lval_t *val = malloc(sizeof(lval_t));
-    val->type = LVAL_NUM;
-    val->val.num = num;
+    val->type = LVAL_INT;
+    val->val.intval = num;
+    return val;
+}
+
+lval_t *lval_float(double num) {
+    lval_t *val = malloc(sizeof(lval_t));
+    val->type = LVAL_FLOAT;
+    val->val.floatval = num;
     return val;
 }
 
@@ -77,7 +84,8 @@ void lfunc_del(lfunc_t *);
 
 void lval_del(lval_t *val) {
     switch (val->type) {
-        case LVAL_NUM:
+        case LVAL_FLOAT:
+        case LVAL_INT:
         case LVAL_BUILTIN:
             break;
         case LVAL_LAMBDA:
@@ -122,8 +130,11 @@ void lval_expr_print(lval_t *val, char prefix, char suffix) {
 
 void lval_print(lval_t *val) {
     switch ( val->type ) {
-        case LVAL_NUM:
-            printf("%lf", val->val.num);
+        case LVAL_FLOAT:
+            printf("%lf", val->val.floatval);
+            break;
+        case LVAL_INT:
+            printf("%lli", val->val.intval);
             break;
         case LVAL_ERR:
             printf("Error: %s", val->val.err);
@@ -155,15 +166,35 @@ void lval_println(lval_t *val) {
     putchar('\n');
 }
 
-lval_t *lval_read_num(mpc_ast_t *t) {
-    double num = 0.0;
-    int code = sscanf(t->contents, "%lf", &num);
+enum { 
+    LREAD_FLOAT = 0,
+    LREAD_INT = 1
+};
 
-    if ( code == 1 ) {
-        return lval_num(num);
-    } else {
-        return lval_err("Cloud not parse '%s' as a number.", t->contents);
+lval_t *lval_read_num(mpc_ast_t *t, int choice) {
+
+    int code = 0;
+    long long int int_read = 0;
+    double float_read = 0.0;
+
+    switch (choice) {
+        case LREAD_FLOAT:
+            code = sscanf(t->contents, "%lf", &float_read);
+
+            if ( code == 1 ) {
+                return lval_float(float_read);
+            }
+            break;
+        case LREAD_INT:
+            code = sscanf(t->contents, "%lli", &int_read);
+
+            if ( code == 1 ) {
+                return lval_int(int_read);
+            }
+            break;
     }
+
+    return lval_err("Cloud not parse '%s' as a number.", t->contents);
 }
 
 lval_t *lval_add(lval_t *val, lval_t *other) {
@@ -212,8 +243,12 @@ lval_t *lval_join(lval_t *x, lval_t *y) {
 lval_t *lval_read(mpc_ast_t *t) {
     lval_t *val = NULL;
 
-    if ( strstr(t->tag, "number") ) {
-        return lval_read_num(t);
+    if ( strstr(t->tag, "float") ) {
+        return lval_read_num(t, LREAD_FLOAT);
+    }
+
+    if ( strstr(t->tag, "integer") ) {
+        return lval_read_num(t, LREAD_INT);
     }
 
     if ( strstr(t->tag, "symbol") ) {
@@ -281,8 +316,11 @@ lval_t *lval_copy(lval_t *v) {
         case LVAL_BUILTIN:
             x->val.builtin = v->val.builtin;
             break;
-        case LVAL_NUM:
-            x->val.num = v->val.num;
+        case LVAL_FLOAT:
+            x->val.floatval = v->val.floatval;
+            break;
+        case LVAL_INT:
+            x->val.intval = v->val.intval;
             break;
         case LVAL_ERR:
             x->val.err = calloc((strlen(v->val.err) + 1), sizeof(char));
@@ -311,8 +349,10 @@ int lval_eq(lval_t *x, lval_t *y) {
     }
 
     switch ( x->type ) {
-        case LVAL_NUM:
-            return (x->val.num == y->val.num);
+        case LVAL_FLOAT:
+            return (x->val.floatval == y->val.floatval);
+        case LVAL_INT:
+            return (x->val.intval == y->val.intval);
         case LVAL_ERR:
             return (strcmp(x->val.err, y->val.err) == 0);
         case LVAL_SYM:
@@ -345,8 +385,10 @@ char *ltype_name(ltype t) {
             return "builtin";
         case LVAL_LAMBDA:
             return "lambda";
-        case LVAL_NUM:
-            return "number";
+        case LVAL_FLOAT:
+            return "float";
+        case LVAL_INT:
+            return "integer";
         case LVAL_QEXPR:
             return "q-expression";
         case LVAL_SEXPR:
@@ -360,7 +402,7 @@ char *ltype_name(ltype t) {
 }
 
 void lval_depth_print(lval_t *v, size_t depth) {
- 
+    
     for ( size_t i = 0; i < depth; ++i ) {
         putchar(' ');
     }
@@ -377,8 +419,11 @@ void lval_depth_print(lval_t *v, size_t depth) {
         case LVAL_LAMBDA:
             printf("%p\n", (void *) v->val.fun);
             break;
-        case LVAL_NUM:
-            printf("%lf\n", v->val.num );
+        case LVAL_FLOAT:
+            printf("%lf\n", v->val.floatval);
+            break;
+        case LVAL_INT:
+            printf("%lli\n", v->val.intval);
             break;
         case LVAL_ERR:
             printf("Error: %s\n", v->val.err);
