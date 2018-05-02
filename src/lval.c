@@ -19,6 +19,13 @@ lval_t *lval_float(double num) {
     return val;
 }
 
+lval_t *lval_bool(long long num) {
+    lval_t *val = malloc(sizeof(lval_t));
+    val->type = LVAL_BOOL;
+    val->val.intval = num;
+    return val;
+}
+
 lval_t *lval_err(char *fmt, ...) {
     lval_t *val = malloc(sizeof(lval_t));
     val->type = LVAL_ERR;
@@ -87,6 +94,7 @@ void lval_del(lval_t *val) {
         case LVAL_FLOAT:
         case LVAL_INT:
         case LVAL_BUILTIN:
+        case LVAL_BOOL:
             break;
         case LVAL_LAMBDA:
             lfunc_del(val->val.fun);
@@ -135,6 +143,13 @@ void lval_print(lval_t *val) {
             break;
         case LVAL_INT:
             printf("%lli", val->val.intval);
+            break;
+        case LVAL_BOOL:
+            if ( val->val.intval == 0 ) {
+                printf("false");
+            } else {
+                printf("true");
+            }
             break;
         case LVAL_ERR:
             printf("Error: %s", val->val.err);
@@ -243,6 +258,11 @@ lval_t *lval_join(lval_t *x, lval_t *y) {
 lval_t *lval_read(mpc_ast_t *t) {
     lval_t *val = NULL;
 
+    if ( strstr(t->tag, "boolean") ) {
+        long long res = (strcmp(t->contents, "true") == 0) ? 1 : 0;
+        return lval_bool(res);
+    }
+
     if ( strstr(t->tag, "float") ) {
         return lval_read_num(t, LREAD_FLOAT);
     }
@@ -320,6 +340,7 @@ lval_t *lval_copy(lval_t *v) {
             x->val.floatval = v->val.floatval;
             break;
         case LVAL_INT:
+        case LVAL_BOOL:
             x->val.intval = v->val.intval;
             break;
         case LVAL_ERR:
@@ -351,6 +372,7 @@ int lval_eq(lval_t *x, lval_t *y) {
     switch ( x->type ) {
         case LVAL_FLOAT:
             return (x->val.floatval == y->val.floatval);
+        case LVAL_BOOL:
         case LVAL_INT:
             return (x->val.intval == y->val.intval);
         case LVAL_ERR:
@@ -387,6 +409,8 @@ char *ltype_name(ltype t) {
             return "lambda";
         case LVAL_FLOAT:
             return "float";
+        case LVAL_BOOL:
+            return "boolean";
         case LVAL_INT:
             return "integer";
         case LVAL_QEXPR:
@@ -409,31 +433,16 @@ void lval_depth_print(lval_t *v, size_t depth) {
 
     printf("`-t: %s = ", ltype_name(v->type));
 
+    lval_println(v);
+
     switch ( v->type ) {
-        case LVAL_SYM:
-            printf("'%s'\n", v->val.sym);
-            break;
-        case LVAL_BUILTIN:
-            printf("builtin\n");
-            break;
-        case LVAL_LAMBDA:
-            printf("%p\n", (void *) v->val.fun);
-            break;
-        case LVAL_FLOAT:
-            printf("%lf\n", v->val.floatval);
-            break;
-        case LVAL_INT:
-            printf("%lli\n", v->val.intval);
-            break;
-        case LVAL_ERR:
-            printf("Error: %s\n", v->val.err);
-            break;
         case LVAL_QEXPR:
         case LVAL_SEXPR:
-            putchar('\n');
             for ( size_t i = 0; i < v->val.l.count; ++i ) {
                 lval_depth_print(v->val.l.cells[i], depth + 1);
             }
+            break;
+        default:
             break;
     }
 

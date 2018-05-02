@@ -12,7 +12,8 @@ typedef enum ltype {
     LVAL_SEXPR,
     LVAL_QEXPR,
     LVAL_BUILTIN,
-    LVAL_LAMBDA
+    LVAL_LAMBDA,
+    LVAL_BOOL
 } ltype;
 
 struct lval_t; 

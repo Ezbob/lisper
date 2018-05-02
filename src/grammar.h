@@ -1,6 +1,7 @@
 #include "mpc.h"
 
 typedef struct grammar_elems {
+    mpc_parser_t* Boolean;
     mpc_parser_t* Integer;
     mpc_parser_t* Float;
     mpc_parser_t* Symbol;
