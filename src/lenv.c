@@ -84,8 +84,8 @@ void lenv_add_builtins(lenv_t *e) {
 
     LENV_SYMBUILTIN(">", gt);
     LENV_SYMBUILTIN("<", lt);
-    LENV_SYMBUILTIN(">=", le);
-    LENV_SYMBUILTIN("<=", ge);
+    LENV_SYMBUILTIN(">=", ge);
+    LENV_SYMBUILTIN("<=", le);
 }
 
 lval_t *lenv_get(lenv_t *e, lval_t *k) {

@@ -448,9 +448,13 @@ lval_t *builtin_if(lenv_t *e, lval_t *v) {
     lval_t *cond = v->val.l.cells[0];
 
     if ( cond->val.intval ) {
-        res = lval_eval(e, lval_pop(v, 1));
+        res = lval_pop(v, 1);
+        res->type = LVAL_SEXPR;
+        res = lval_eval(e, res);
     } else {
-        res = lval_eval(e, lval_pop(v, 2));
+        res = lval_pop(v, 2);
+        res->type = LVAL_SEXPR;
+        res = lval_eval(e, res);
     }
 
     lval_del(v);
