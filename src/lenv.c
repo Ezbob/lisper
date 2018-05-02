@@ -82,6 +82,10 @@ void lenv_add_builtins(lenv_t *e) {
     LENV_SYMBUILTIN("==", eq);
     LENV_SYMBUILTIN("!=", ne);
 
+    LENV_SYMBUILTIN("||", or);
+    LENV_SYMBUILTIN("&&", and);
+    LENV_SYMBUILTIN("!", not);
+
     LENV_SYMBUILTIN(">", gt);
     LENV_SYMBUILTIN("<", lt);
     LENV_SYMBUILTIN(">=", ge);

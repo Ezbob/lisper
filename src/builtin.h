@@ -31,6 +31,9 @@ lval_t *builtin_fun(lenv_t *, lval_t *);
 
 lval_t *builtin_eq(lenv_t *, lval_t *);
 lval_t *builtin_ne(lenv_t *, lval_t *);
+lval_t *builtin_not(lenv_t *, lval_t *);
+lval_t *builtin_and(lenv_t *, lval_t *);
+lval_t *builtin_or(lenv_t *, lval_t *);
 
 lval_t *builtin_le(lenv_t *, lval_t *);
 lval_t *builtin_lt(lenv_t *, lval_t *);

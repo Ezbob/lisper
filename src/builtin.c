@@ -437,8 +437,42 @@ lval_t *builtin_ne(lenv_t *e, lval_t *v) {
     return builtin_cmp(e, v, "!=");
 }
 
-lval_t *builtin_if(lenv_t *e, lval_t *v) {
+lval_t *builtin_and(lenv_t *e, lval_t *v) {
     UNUSED(e);
+    LEXACT_ARGS(v, "&&", 2);
+    LARG_TYPE(v, "&&", 0, LVAL_INT);
+    LARG_TYPE(v, "&&", 1, LVAL_INT);
+
+    long long res = (v->val.l.cells[0]->val.intval && v->val.l.cells[1]->val.intval);
+
+    lval_del(v);
+    return lval_int(res);
+}
+
+lval_t *builtin_or(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LEXACT_ARGS(v, "||", 2);
+    LARG_TYPE(v, "||", 0, LVAL_INT);
+    LARG_TYPE(v, "||", 1, LVAL_INT);
+
+    long long res = (v->val.l.cells[0]->val.intval || v->val.l.cells[1]->val.intval);
+
+    lval_del(v);
+    return lval_int(res);
+}
+
+lval_t *builtin_not(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LEXACT_ARGS(v, "!", 1);
+    LARG_TYPE(v, "!", 0, LVAL_INT);
+
+    long long res = !v->val.l.cells[0]->val.intval;
+
+    lval_del(v);
+    return lval_int(res);
+}
+
+lval_t *builtin_if(lenv_t *e, lval_t *v) {
     LEXACT_ARGS(v, "if", 3);
     LARG_TYPE(v, "if", 0, LVAL_INT);
     LARG_TYPE(v, "if", 1, LVAL_QEXPR);

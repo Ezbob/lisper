@@ -29,7 +29,7 @@ void grammar_make_lang(grammar_elems *elems) {
     mpca_lang(MPCA_LANG_DEFAULT,
         "float      : /([-+])?[0-9]+(\\.[0-9]*)?[eE][0-9]+/ | /([-+])?[0-9]+\\.[0-9]*/ ;"
         "integer    : /([-+])?[0-9]+/ ;"
-        "symbol     : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%^]+/ ;"
+        "symbol     : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%^|]+/ ;"
         "qexpr      : '{' <expr>* '}' ;"
         "sexpr      : '(' <expr>* ')' ;"
         "expr       : <float> | <integer> | <symbol> | <sexpr> | <qexpr> ;"
