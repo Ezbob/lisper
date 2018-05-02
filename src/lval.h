@@ -57,6 +57,7 @@ void lval_del(lval_t *);
 /* lval constructors */
 lval_t *lval_err(char *, ...);
 lval_t *lval_float(double);
+lval_t *lval_bool(long long);
 lval_t *lval_int(long long);
 lval_t *lval_sym(char *);
 lval_t *lval_builtin(lbuiltin);

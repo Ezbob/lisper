@@ -6,7 +6,6 @@
 #include "prompt.h"
 
 #define UNUSED(x) (void)(x)
-
 #define LIS_NUM(type) (type == LVAL_INT || type == LVAL_FLOAT)
 
 #define LASSERT(args, cond, fmt, ...) \
@@ -306,12 +305,10 @@ lval_t *builtin_lambda(lenv_t *e, lval_t *v) {
 lval_t *builtin_var(lenv_t *, lval_t *, char *);
 
 lval_t *builtin_def(lenv_t *e, lval_t *v) {
-    UNUSED(e);
     return builtin_var(e, v, "def");
 }
 
 lval_t *builtin_put(lenv_t *e, lval_t *v) {
-    UNUSED(e);
     return builtin_var(e, v, "=");
 }
 
@@ -390,11 +387,12 @@ lval_t *builtin_ge(lenv_t *e, lval_t *v) {
 lval_t *builtin_ord(lenv_t *e, lval_t *v, char *sym) {
     UNUSED(e);
     LEXACT_ARGS(v, sym, 2);
-    LARG_TYPE(v, sym, 0, LVAL_INT);
-    LARG_TYPE(v, sym, 1, LVAL_INT);
 
     lval_t *lhs = v->val.l.cells[0];
     lval_t *rhs = v->val.l.cells[1];
+
+    LASSERT(v, LIS_NUM(lhs->type), "Wrong type of argument parsed to '%s'. Expected '%s' or '%s' got '%s'.", sym, ltype_name(LVAL_INT), ltype_name(LVAL_FLOAT), ltype_name(lhs->type));
+    LASSERT(v, LIS_NUM(rhs->type), "Wrong type of argument parsed to '%s'. Expected '%s' or '%s' got '%s'.", sym, ltype_name(LVAL_INT), ltype_name(LVAL_FLOAT), ltype_name(rhs->type));
 
     long long res = 0;
     if ( strcmp(sym, "<") == 0 ) {
@@ -408,7 +406,7 @@ lval_t *builtin_ord(lenv_t *e, lval_t *v, char *sym) {
     }
 
     lval_del(v);
-    return lval_int(res);
+    return lval_bool(res);
 }
 
 lval_t *builtin_cmp(lenv_t *e, lval_t *v, char *sym) {
@@ -426,7 +424,7 @@ lval_t *builtin_cmp(lenv_t *e, lval_t *v, char *sym) {
     }
 
     lval_del(v);
-    return lval_int(res);
+    return lval_bool(res);
 }
 
 lval_t *builtin_eq(lenv_t *e, lval_t *v) {
@@ -440,41 +438,41 @@ lval_t *builtin_ne(lenv_t *e, lval_t *v) {
 lval_t *builtin_and(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LEXACT_ARGS(v, "&&", 2);
-    LARG_TYPE(v, "&&", 0, LVAL_INT);
-    LARG_TYPE(v, "&&", 1, LVAL_INT);
+    LARG_TYPE(v, "&&", 0, LVAL_BOOL);
+    LARG_TYPE(v, "&&", 1, LVAL_BOOL);
 
     long long res = (v->val.l.cells[0]->val.intval && v->val.l.cells[1]->val.intval);
 
     lval_del(v);
-    return lval_int(res);
+    return lval_bool(res);
 }
 
 lval_t *builtin_or(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LEXACT_ARGS(v, "||", 2);
-    LARG_TYPE(v, "||", 0, LVAL_INT);
-    LARG_TYPE(v, "||", 1, LVAL_INT);
+    LARG_TYPE(v, "||", 0, LVAL_BOOL);
+    LARG_TYPE(v, "||", 1, LVAL_BOOL);
 
     long long res = (v->val.l.cells[0]->val.intval || v->val.l.cells[1]->val.intval);
 
     lval_del(v);
-    return lval_int(res);
+    return lval_bool(res);
 }
 
 lval_t *builtin_not(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LEXACT_ARGS(v, "!", 1);
-    LARG_TYPE(v, "!", 0, LVAL_INT);
+    LARG_TYPE(v, "!", 0, LVAL_BOOL);
 
     long long res = !v->val.l.cells[0]->val.intval;
 
     lval_del(v);
-    return lval_int(res);
+    return lval_bool(res);
 }
 
 lval_t *builtin_if(lenv_t *e, lval_t *v) {
     LEXACT_ARGS(v, "if", 3);
-    LARG_TYPE(v, "if", 0, LVAL_INT);
+    LARG_TYPE(v, "if", 0, LVAL_BOOL);
     LARG_TYPE(v, "if", 1, LVAL_QEXPR);
     LARG_TYPE(v, "if", 2, LVAL_QEXPR);
 
