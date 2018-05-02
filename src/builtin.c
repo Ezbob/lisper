@@ -240,18 +240,11 @@ lval_t *builtin_len(lenv_t *e, lval_t *v) {
     LEXACT_ARGS(v, "len", 1);
     LARG_TYPE(v, "len", 0, LVAL_QEXPR);
 
-    lval_t *arg = lval_pop(v, 0);
+    lval_t *arg = v->val.l.cells[0];
     size_t count = arg->val.l.count;
 
-    while ( arg->val.l.count ) {
-        lval_del(lval_pop(arg, 0));
-    }
-
-    arg->type = LVAL_INT;
-    arg->val.intval = ( (long long) count ); // we only have double defined as numbers
     lval_del(v);
-
-    return arg;
+    return lval_int(count);
 }
 
 lval_t *builtin_init(lenv_t *e, lval_t *v) {
