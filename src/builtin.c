@@ -30,12 +30,26 @@
 lval_t *builtin_op(lenv_t *e, lval_t *v, char *sym) {
     UNUSED(e);
 
-    for ( size_t i = 0; i < v->val.l.count; i++ ) {
+    ltype last_type = v->val.l.cells[0]->type;
+
+    if ( !LIS_NUM(v->val.l.cells[0]->type) ) {
+        lval_t *err = lval_err("Cannot operate on argument %i. Non-number type '%s' parsed to %s.", 1, ltype_name(v->val.l.cells[0]->type), sym);
+        lval_del(v);
+        return err;
+    }
+
+    for ( size_t i = 1; i < v->val.l.count; i++ ) {
         if ( !LIS_NUM(v->val.l.cells[i]->type) ) {
             lval_t *err = lval_err("Cannot operate on argument %lu. Non-number type '%s' parsed to %s.", i + 1, ltype_name(v->val.l.cells[i]->type), sym);
             lval_del(v);
             return err;
         }
+        if ( last_type != v->val.l.cells[i]->type ) {
+            lval_t *err = lval_err("Argument type mismatch. Argument %lu is of type '%s', while argument %lu is of type '%s'.", i, ltype_name(last_type), i + 1, ltype_name(v->val.l.cells[i]->type));
+            lval_del(v);
+            return err;
+        }
+        last_type = v->val.l.cells[i]->type;
     }
 
     lval_t *a = lval_pop(v, 0);
@@ -386,6 +400,7 @@ lval_t *builtin_ord(lenv_t *e, lval_t *v, char *sym) {
 
     LASSERT(v, LIS_NUM(lhs->type), "Wrong type of argument parsed to '%s'. Expected '%s' or '%s' got '%s'.", sym, ltype_name(LVAL_INT), ltype_name(LVAL_FLOAT), ltype_name(lhs->type));
     LASSERT(v, LIS_NUM(rhs->type), "Wrong type of argument parsed to '%s'. Expected '%s' or '%s' got '%s'.", sym, ltype_name(LVAL_INT), ltype_name(LVAL_FLOAT), ltype_name(rhs->type));
+    LASSERT(v, lhs->type == rhs->type, "Type of arguments does not match. Argument %i is of type '%s'; argument %i is of type '%s'.", 1, ltype_name(lhs->type), 2, ltype_name(rhs->type));
 
     long long res = 0;
     if ( strcmp(sym, "<") == 0 ) {
