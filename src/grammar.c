@@ -7,6 +7,7 @@ void grammar_elems_init(grammar_elems *elems) {
     elems->Integer = mpc_new("integer");
     elems->Float = mpc_new("float");
     elems->String = mpc_new("string");
+    elems->Comment = mpc_new("comment");
     elems->Symbol = mpc_new("symbol");
     elems->Sexpr = mpc_new("sexpr");
     elems->Qexpr = mpc_new("qexpr");
@@ -15,10 +16,11 @@ void grammar_elems_init(grammar_elems *elems) {
 }
 
 void grammar_elems_destroy(grammar_elems *elems) {
-    mpc_cleanup(9,
+    mpc_cleanup(10,
         elems->Boolean,
         elems->Integer,
         elems->Float,
+        elems->Comment,
         elems->String,
         elems->Symbol,
         elems->Qexpr,
@@ -36,15 +38,18 @@ void grammar_make_lang(grammar_elems *elems) {
         "float      : /([-+])?[0-9]+(\\.[0-9]*)?[eE][0-9]+/ | /([-+])?[0-9]+\\.[0-9]*/ ;"
         "integer    : /([-+])?[0-9]+/ ;"
         "symbol     : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%^|]+/ ;"
+        "comment    : /;[^\\r\\n]*/ ;"
         "qexpr      : '{' <expr>* '}' ;"
         "sexpr      : '(' <expr>* ')' ;"
-        "expr       : <string> | <boolean> | <float> | <integer> | <symbol> | <sexpr> | <qexpr> ;"
+        "expr       : <string> | <boolean> | <float> | <integer> | <symbol>" 
+                   "| <sexpr>  | <qexpr>   | <comment> ;"
         "lisper     : /^/ <expr>* /$/ ;",
         elems->Boolean,
         elems->Integer,
         elems->Float,
         elems->String,
         elems->Symbol,
+        elems->Comment,
         elems->Qexpr,
         elems->Sexpr,
         elems->Expr, 
