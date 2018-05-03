@@ -13,7 +13,8 @@ typedef enum ltype {
     LVAL_QEXPR,
     LVAL_BUILTIN,
     LVAL_LAMBDA,
-    LVAL_BOOL
+    LVAL_BOOL,
+    LVAL_STR
 } ltype;
 
 struct lval_t; 
@@ -42,6 +43,7 @@ struct lval_t {
         long long intval;
         char *err;
         char *sym;
+        char *str;
         lcells_t l;
         lbuiltin builtin;
         lfunc_t *fun;
@@ -60,6 +62,7 @@ lval_t *lval_float(double);
 lval_t *lval_bool(long long);
 lval_t *lval_int(long long);
 lval_t *lval_sym(char *);
+lval_t *lval_str(char *);
 lval_t *lval_builtin(lbuiltin);
 lval_t *lval_sexpr(void);
 lval_t *lval_qexpr(void);

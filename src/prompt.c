@@ -51,7 +51,7 @@ void signal_handler(int signum) {
 
 void do_repl(void) {
     char *input;
-    printf("lisper version %s\n", "0.0.0.1");
+    printf("lisper version %s\n", "0.0.1");
     printf("Anders Busch 2018\n");
     puts("Press Ctrl+c to Exit\n");
 

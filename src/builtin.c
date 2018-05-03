@@ -288,6 +288,16 @@ lval_t *builtin_exit(lenv_t *e, lval_t *v) {
     return lval_sexpr();
 }
 
+lval_t *builtin_type(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LEXACT_ARGS(v, "type", 1);
+
+    char *t = ltype_name(v->val.l.cells[0]->type);
+
+    lval_del(v);
+    return lval_str(t);
+}
+
 lval_t *builtin_lambda(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LEXACT_ARGS(v, "\\", 2);

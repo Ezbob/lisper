@@ -4,6 +4,7 @@ typedef struct grammar_elems {
     mpc_parser_t* Boolean;
     mpc_parser_t* Integer;
     mpc_parser_t* Float;
+    mpc_parser_t* String;
     mpc_parser_t* Symbol;
     mpc_parser_t* Qexpr;
     mpc_parser_t* Sexpr;

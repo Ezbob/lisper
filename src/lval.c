@@ -34,7 +34,6 @@ lval_t *lval_err(char *fmt, ...) {
 
     val->val.err = malloc(512 * sizeof(char));
     vsnprintf(val->val.err, 511, fmt, va);
-
     val->val.err = realloc(val->val.err, strlen(val->val.err) + 1);
 
     va_end(va); 
@@ -63,6 +62,14 @@ lval_t *lval_qexpr(void) {
     val->val.l.count = 0;
     val->val.l.cells = NULL;
     return val;
+}
+
+lval_t *lval_str(char *s) {
+    lval_t *v = malloc(sizeof(lval_t));
+    v->type = LVAL_STR;
+    v->val.str = malloc(strlen(s) + 1);
+    strcpy(v->val.str, s);
+    return v;
 }
 
 lval_t *lval_builtin(lbuiltin f) {
@@ -105,6 +112,9 @@ void lval_del(lval_t *val) {
         case LVAL_SYM:
             free(val->val.sym);
             break;
+        case LVAL_STR:
+            free(val->val.str);
+            break;
         case LVAL_QEXPR:
         case LVAL_SEXPR:
             for ( size_t i = 0; i < val->val.l.count; ++i ) {
@@ -136,6 +146,17 @@ void lval_expr_print(lval_t *val, char prefix, char suffix) {
     putchar(suffix);
 }
 
+void lval_print_str(lval_t *v) {
+
+    char *escaped = malloc(strlen(v->val.str) + 1);
+    strcpy(escaped, v->val.str);
+
+    escaped = mpcf_escape(escaped);
+    printf("\"%s\"", escaped);
+
+    free(escaped);
+}
+
 void lval_print(lval_t *val) {
     switch ( val->type ) {
         case LVAL_FLOAT:
@@ -156,6 +177,9 @@ void lval_print(lval_t *val) {
             break;
         case LVAL_SYM:
             printf("%s", val->val.sym);
+            break;
+        case LVAL_STR:
+            lval_print_str(val);
             break;
         case LVAL_SEXPR:
             lval_expr_print(val, '(', ')');
@@ -255,12 +279,30 @@ lval_t *lval_join(lval_t *x, lval_t *y) {
     return x;
 }
 
+lval_t *lval_read_str(mpc_ast_t *t) {
+
+    t->contents[strlen(t->contents) - 1] = '\0';
+
+    char *unescaped = malloc(strlen(t->contents + 1) + 1);
+    strcpy(unescaped, t->contents + 1);
+
+    unescaped = mpcf_unescape(unescaped);
+    lval_t *str = lval_str(unescaped);
+
+    free(unescaped);
+    return str;
+}
+
 lval_t *lval_read(mpc_ast_t *t) {
     lval_t *val = NULL;
 
     if ( strstr(t->tag, "boolean") ) {
         long long res = (strcmp(t->contents, "true") == 0) ? 1 : 0;
         return lval_bool(res);
+    }
+
+    if ( strstr(t->tag, "string") ) {
+        return lval_read_str(t);
     }
 
     if ( strstr(t->tag, "float") ) {
@@ -339,6 +381,10 @@ lval_t *lval_copy(lval_t *v) {
         case LVAL_FLOAT:
             x->val.floatval = v->val.floatval;
             break;
+        case LVAL_STR:
+            x->val.str = malloc(strlen(v->val.str) + 1);
+            strcpy(x->val.str, v->val.str);
+            break;
         case LVAL_INT:
         case LVAL_BOOL:
             x->val.intval = v->val.intval;
@@ -395,6 +441,8 @@ int lval_eq(lval_t *x, lval_t *y) {
                 }
             }
             return 1;
+        case LVAL_STR:
+            return strcmp(x->val.str, x->val.str) == 0;
     }
     return 0;
 }
@@ -413,6 +461,8 @@ char *ltype_name(ltype t) {
             return "boolean";
         case LVAL_INT:
             return "integer";
+        case LVAL_STR:
+            return "string";
         case LVAL_QEXPR:
             return "q-expression";
         case LVAL_SEXPR:
