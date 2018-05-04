@@ -28,7 +28,7 @@ void exit_handler(void) {
 
 int main(int argc, char **argv) {
     env = lenv_new();
-    lenv_add_builtins(env);
+    register_builtins(env);
 
     grammar_elems_init(&elems);
     grammar_make_lang(&elems);
@@ -37,7 +37,6 @@ int main(int argc, char **argv) {
     atexit(exit_handler);
 
     if ( argc >= 2 ) {
-
         for ( int i = 1; i < argc; ++i ) {
             lval_t *args = lval_add(lval_sexpr(), lval_str(argv[i]));
             lval_t *x = builtin_load(env, args);
@@ -46,7 +45,6 @@ int main(int argc, char **argv) {
             }
             lval_del(x);
         }
-
     } else {
         do_repl(env, elems);
     }

@@ -27,6 +27,9 @@
 #define LARG_TYPE(sym, funcname, i, expected) \
     LASSERT(sym, sym->val.l.cells[i]->type == expected, "Wrong type of argument parsed to '%s'. Expected '%s' got '%s'.", funcname, ltype_name(expected), ltype_name(sym->val.l.cells[i]->type));
 
+#define LENV_BUILTIN(name) lenv_add_builtin(e, #name, builtin_##name)
+#define LENV_SYMBUILTIN(sym, name) lenv_add_builtin(e, sym, builtin_##name)
+
 extern grammar_elems elems;
 
 /* * math builtins * */
@@ -598,4 +601,46 @@ lval_t *builtin_load(lenv_t *e, lval_t *v) {
     }
 }
 
+void register_builtins(lenv_t *e) {
+    LENV_BUILTIN(list);
+    LENV_BUILTIN(head);
+    LENV_BUILTIN(tail);
+    LENV_BUILTIN(eval);
+    LENV_BUILTIN(join);
+    LENV_BUILTIN(cons);
+    LENV_BUILTIN(len);
+    LENV_BUILTIN(init);
+    LENV_BUILTIN(def);
+    LENV_BUILTIN(exit);
+    LENV_BUILTIN(max);
+    LENV_BUILTIN(min);
+    LENV_BUILTIN(fun);
+    LENV_BUILTIN(if);
+    LENV_BUILTIN(type);
+    LENV_BUILTIN(load);
+    LENV_BUILTIN(error);
+    LENV_BUILTIN(print);
+
+
+    LENV_SYMBUILTIN("+", add);
+    LENV_SYMBUILTIN("-", sub);
+    LENV_SYMBUILTIN("*", mul);
+    LENV_SYMBUILTIN("/", div);
+    LENV_SYMBUILTIN("%", mod);
+    LENV_SYMBUILTIN("^", pow);
+    LENV_SYMBUILTIN("\\", lambda);
+    LENV_SYMBUILTIN("=", put);
+
+    LENV_SYMBUILTIN("==", eq);
+    LENV_SYMBUILTIN("!=", ne);
+
+    LENV_SYMBUILTIN("||", or);
+    LENV_SYMBUILTIN("&&", and);
+    LENV_SYMBUILTIN("!", not);
+
+    LENV_SYMBUILTIN(">", gt);
+    LENV_SYMBUILTIN("<", lt);
+    LENV_SYMBUILTIN(">=", ge);
+    LENV_SYMBUILTIN("<=", le);
+}
 
