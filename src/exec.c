@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "prompt.h"
+#include "exec.h"
 #include "grammar.h"
 #include "lval.h"
 #include "lenv.h"
@@ -35,7 +35,7 @@ void add_history(char* unused) {}
 
 #endif
 
-void do_repl(lenv_t *env, grammar_elems elems) {
+void exec_repl(lenv_t *env, grammar_elems elems) {
     char *input;
     printf("lisper version %s\n", "0.1.0");
     printf("Anders Busch 2018\n");
@@ -71,6 +71,18 @@ void do_repl(lenv_t *env, grammar_elems elems) {
             mpc_err_delete(r.error);
         }
         free(input); 
+    }
+}
+
+
+void exec_filein(lenv_t *env, int argc, char** filenames) {
+    for ( int i = 1; i < argc; ++i ) {
+        lval_t *args = lval_add(lval_sexpr(), lval_str(filenames[i]));
+        lval_t *x = builtin_load(env, args);
+        if ( x->type == LVAL_ERR ) {
+            lval_println(x);
+        }
+        lval_del(x);
     }
 }
 

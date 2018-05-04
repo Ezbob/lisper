@@ -5,7 +5,7 @@
 #include "lenv.h"
 #include "lval.h"
 #include "builtin.h"
-#include "prompt.h"
+#include "exec.h"
 
 grammar_elems elems; /* grammar elems can be reused */
 lenv_t *env = NULL; /* Global environment */
@@ -37,16 +37,9 @@ int main(int argc, char **argv) {
     atexit(exit_handler);
 
     if ( argc >= 2 ) {
-        for ( int i = 1; i < argc; ++i ) {
-            lval_t *args = lval_add(lval_sexpr(), lval_str(argv[i]));
-            lval_t *x = builtin_load(env, args);
-            if ( x->type == LVAL_ERR ) {
-                lval_println(x);
-            }
-            lval_del(x);
-        }
+        exec_filein(env, argc, argv);
     } else {
-        do_repl(env, elems);
+        exec_repl(env, elems);
     }
 
     return EXIT_SUCCESS;
