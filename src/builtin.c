@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "builtin.h"
+#include "grammar.h"
 #include "lval.h"
 #include "lenv.h"
 #include "prompt.h"
@@ -26,6 +27,7 @@
 #define LARG_TYPE(sym, funcname, i, expected) \
     LASSERT(sym, sym->val.l.cells[i]->type == expected, "Wrong type of argument parsed to '%s'. Expected '%s' got '%s'.", funcname, ltype_name(expected), ltype_name(sym->val.l.cells[i]->type));
 
+extern grammar_elems elems;
 
 /* * math builtins * */
 
@@ -526,6 +528,45 @@ lval_t *builtin_not(lenv_t *e, lval_t *v) {
 
     lval_del(v);
     return lval_bool(res);
+}
+
+/* source importation builtins */
+
+lval_t *builtin_load(lenv_t *e, lval_t *v) {
+
+    LEXACT_ARGS(v, "load", 1);
+    LARG_TYPE(v, "load", 1, LVAL_STR);
+
+    mpc_result_t r;
+    if ( mpc_parse_contents(v->val.l.cells[0]->val.str, elems.Lisper, &r) ) {
+
+        lval_t *expr = lval_read(r.output);
+        mpc_ast_delete(r.output);
+
+        while ( expr->val.l.count ) {
+            lval_t *x = lval_eval(e, lval_pop(expr, 0));
+
+            if ( x->type == LVAL_ERR ) {
+                lval_println(x);
+            }
+            lval_del(x);
+        }
+
+        lval_del(expr);
+        lval_del(v);
+
+        return lval_sexpr();
+    } else {
+        /* parse error */
+        char *err_msg = mpc_err_string(r.error);
+        mpc_err_delete(r.error);
+
+        lval_t *err = lval_err("Could not load library %s", err_msg);
+        free(err_msg);
+        lval_del(v);
+
+        return err;
+    }
 }
 
 

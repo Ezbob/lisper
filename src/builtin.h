@@ -42,5 +42,6 @@ lval_t *builtin_ge(lenv_t *, lval_t *);
 lval_t *builtin_gt(lenv_t *, lval_t *);
 lval_t *builtin_if(lenv_t *, lval_t *);
 
+lval_t *builtin_load(lenv_t *, lval_t *);
 #endif
 
