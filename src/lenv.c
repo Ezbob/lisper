@@ -70,6 +70,10 @@ void lenv_add_builtins(lenv_t *e) {
     LENV_BUILTIN(fun);
     LENV_BUILTIN(if);
     LENV_BUILTIN(type);
+    LENV_BUILTIN(load);
+    LENV_BUILTIN(error);
+    LENV_BUILTIN(print);
+
 
     LENV_SYMBUILTIN("+", add);
     LENV_SYMBUILTIN("-", sub);

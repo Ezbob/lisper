@@ -198,6 +198,36 @@ lval_t *builtin_eval(lenv_t *e, lval_t *v) {
     return lval_eval(e, a);
 }
 
+/* * IO builtins * */
+
+lval_t *builtin_print(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+
+    for ( size_t i = 0; i < v->val.l.count; ++i ) {
+        lval_print(v->val.l.cells[i]);
+        putchar(' ');
+    }
+
+    putchar('\n');
+    lval_del(v);
+
+    return lval_sexpr();
+}
+
+/* * error builtins * */
+
+lval_t *builtin_error(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LEXACT_ARGS(v, "error", 1);
+    LARG_TYPE(v, "error", 0, LVAL_STR);
+
+    lval_t *err = lval_err(v->val.l.cells[0]->val.str);
+
+    lval_del(v);
+    return err;
+}
+
+
 /* * collection builtins * */
 
 lval_t *builtin_tail(lenv_t *e, lval_t *v) {
@@ -289,7 +319,6 @@ lval_t *builtin_exit(lenv_t *e, lval_t *v) {
     LARG_TYPE(v, "exit", 0, LVAL_INT);
 
     int exit_code = (int) (v->val.l.cells[0]->val.intval);
-    /* TODO MORE CLEAN UP NEEDED */
     lval_del(v);
     lenv_del(e);
     exit(exit_code);
@@ -535,7 +564,7 @@ lval_t *builtin_not(lenv_t *e, lval_t *v) {
 lval_t *builtin_load(lenv_t *e, lval_t *v) {
 
     LEXACT_ARGS(v, "load", 1);
-    LARG_TYPE(v, "load", 1, LVAL_STR);
+    LARG_TYPE(v, "load", 0, LVAL_STR);
 
     mpc_result_t r;
     if ( mpc_parse_contents(v->val.l.cells[0]->val.str, elems.Lisper, &r) ) {
