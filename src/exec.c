@@ -35,6 +35,11 @@ void add_history(char* unused) {}
 
 #endif
 
+void goodbye_exit(void) {
+    printf("\nBye.");
+    putchar('\n');
+}
+
 void exec_repl(lenv_t *env, grammar_elems elems) {
     char *input;
     printf("lisper version %s\n", "0.1.0");
@@ -43,6 +48,8 @@ void exec_repl(lenv_t *env, grammar_elems elems) {
 
     mpc_result_t r;
     lval_t *val;
+
+    atexit(goodbye_exit);
 
 #ifdef _DEBUG
     lenv_pretty_print(env);

@@ -23,7 +23,6 @@ void signal_handler(int signum) {
 void exit_handler(void) {
     grammar_elems_destroy(&elems);
     lenv_del(env);
-    putchar('\n');
 }
 
 int main(int argc, char **argv) {
