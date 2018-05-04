@@ -27,6 +27,8 @@
     LASSERT(sym, sym->val.l.cells[i]->type == expected, "Wrong type of argument parsed to '%s'. Expected '%s' got '%s'.", funcname, ltype_name(expected), ltype_name(sym->val.l.cells[i]->type));
 
 
+/* * math builtins * */
+
 lval_t *builtin_op(lenv_t *e, lval_t *v, char *sym) {
     UNUSED(e);
 
@@ -165,7 +167,7 @@ lval_t *builtin_pow(lenv_t *e, lval_t *a) {
     return builtin_op(e, a, "^");
 }
 
-lval_t *builtin_fmod(lenv_t *e, lval_t *a) {
+lval_t *builtin_mod(lenv_t *e, lval_t *a) {
     return builtin_op(e, a, "%");
 }
 
@@ -176,6 +178,25 @@ lval_t *builtin_min(lenv_t *e, lval_t *a) {
 lval_t *builtin_max(lenv_t *e, lval_t *a) {
     return builtin_op(e, a, "max");
 }
+
+/* * q-expression specific builtins * */
+
+lval_t *builtin_list(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    v->type = LVAL_QEXPR;
+    return v;
+}
+
+lval_t *builtin_eval(lenv_t *e, lval_t *v) {
+    LEXACT_ARGS(v, "eval", 1);
+    LARG_TYPE(v, "eval", 0, LVAL_QEXPR);
+
+    lval_t *a = lval_take(v, 0);
+    a->type = LVAL_SEXPR;
+    return lval_eval(e, a);
+}
+
+/* * collection builtins * */
 
 lval_t *builtin_tail(lenv_t *e, lval_t *v) {
     UNUSED(e);
@@ -202,22 +223,6 @@ lval_t *builtin_head(lenv_t *e, lval_t *v) {
 
     return a;
 }
-
-lval_t *builtin_list(lenv_t *e, lval_t *v) {
-    UNUSED(e);
-    v->type = LVAL_QEXPR;
-    return v;
-}
-
-lval_t *builtin_eval(lenv_t *e, lval_t *v) {
-    LEXACT_ARGS(v, "eval", 1);
-    LARG_TYPE(v, "eval", 0, LVAL_QEXPR);
-
-    lval_t *a = lval_take(v, 0);
-    a->type = LVAL_SEXPR;
-    return lval_eval(e, a);
-}
-
 
 lval_t *builtin_join(lenv_t *e, lval_t *v) {
     UNUSED(e);
@@ -274,6 +279,8 @@ lval_t *builtin_init(lenv_t *e, lval_t *v) {
     return qexpr;
 }
 
+/* * control flow builtins  * */
+
 lval_t *builtin_exit(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LEXACT_ARGS(v, "exit", 1);
@@ -288,6 +295,31 @@ lval_t *builtin_exit(lenv_t *e, lval_t *v) {
     return lval_sexpr();
 }
 
+lval_t *builtin_if(lenv_t *e, lval_t *v) {
+    LEXACT_ARGS(v, "if", 3);
+    LARG_TYPE(v, "if", 0, LVAL_BOOL);
+    LARG_TYPE(v, "if", 1, LVAL_QEXPR);
+    LARG_TYPE(v, "if", 2, LVAL_QEXPR);
+
+    lval_t *res = NULL;
+    lval_t *cond = v->val.l.cells[0];
+
+    if ( cond->val.intval ) {
+        res = lval_pop(v, 1);
+        res->type = LVAL_SEXPR;
+        res = lval_eval(e, res);
+    } else {
+        res = lval_pop(v, 2);
+        res->type = LVAL_SEXPR;
+        res = lval_eval(e, res);
+    }
+
+    lval_del(v);
+    return res;
+}
+
+/* * reflection builtins * */
+
 lval_t *builtin_type(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LEXACT_ARGS(v, "type", 1);
@@ -297,6 +329,8 @@ lval_t *builtin_type(lenv_t *e, lval_t *v) {
     lval_del(v);
     return lval_str(t);
 }
+
+/* * function builtins * */
 
 lval_t *builtin_lambda(lenv_t *e, lval_t *v) {
     UNUSED(e);
@@ -318,6 +352,39 @@ lval_t *builtin_lambda(lenv_t *e, lval_t *v) {
 
     return lval_lambda(formals, body);
 }
+
+lval_t *builtin_fun(lenv_t *e, lval_t*v) {
+    LEXACT_ARGS(v, "fun", 2);
+    LARG_TYPE(v, "fun", 0, LVAL_QEXPR);
+    LARG_TYPE(v, "fun", 1, LVAL_QEXPR);
+
+    lval_t *formals = v->val.l.cells[0];
+
+    LASSERT(v, formals->val.l.count > 0, "Expected argument list be of least size %i.", 1);
+    LASSERT(v, formals->val.l.cells[0]->type == LVAL_SYM, "Expected function name to be of type '%s'; got '%s'", ltype_name(LVAL_SYM), ltype_name(formals->val.l.cells[0]->type));
+
+    lval_t *body = v->val.l.cells[1];
+
+    for ( size_t i = 1; i < formals->val.l.count; ++i ) {
+       LASSERT(v, formals->val.l.cells[i]->type == LVAL_SYM,
+            "Expected parameter %lu to be of type '%s'; got type '%s'.", i + 1, ltype_name(LVAL_SYM), ltype_name(formals->val.l.cells[i]->type));
+    }
+
+    formals = lval_pop(v, 0);
+    lval_t *name = lval_pop(formals, 0);
+
+    body = lval_pop(v, 0);
+    lval_t *fun = lval_lambda(formals, body);
+
+    lenv_put(e, name, fun);
+    lval_del(fun);
+    lval_del(name);
+    lval_del(v);
+
+    return lval_sexpr();
+}
+
+/* * value definition builtins * */
 
 lval_t *builtin_var(lenv_t *, lval_t *, char *);
 
@@ -352,36 +419,7 @@ lval_t *builtin_var(lenv_t *e, lval_t *v, char *sym) {
     return lval_sexpr();
 }
 
-lval_t *builtin_fun(lenv_t *e, lval_t*v) {
-    LEXACT_ARGS(v, "fun", 2);
-    LARG_TYPE(v, "fun", 0, LVAL_QEXPR);
-    LARG_TYPE(v, "fun", 1, LVAL_QEXPR);
-
-    lval_t *formals = v->val.l.cells[0];
-
-    LASSERT(v, formals->val.l.count > 0, "Expected argument list be of least size %i.", 1);
-    LASSERT(v, formals->val.l.cells[0]->type == LVAL_SYM, "Expected function name to be of type '%s'; got '%s'", ltype_name(LVAL_SYM), ltype_name(formals->val.l.cells[0]->type));
-
-    lval_t *body = v->val.l.cells[1];
-
-    for ( size_t i = 1; i < formals->val.l.count; ++i ) {
-       LASSERT(v, formals->val.l.cells[i]->type == LVAL_SYM,
-            "Expected parameter %lu to be of type '%s'; got type '%s'.", i + 1, ltype_name(LVAL_SYM), ltype_name(formals->val.l.cells[i]->type));
-    }
-
-    formals = lval_pop(v, 0);
-    lval_t *name = lval_pop(formals, 0);
-
-    body = lval_pop(v, 0);
-    lval_t *fun = lval_lambda(formals, body);
-
-    lenv_put(e, name, fun);
-    lval_del(fun);
-    lval_del(name);
-    lval_del(v);
-
-    return lval_sexpr();
-}
+/* * comparison builtins * */
 
 lval_t *builtin_ord(lenv_t *e, lval_t *v, char *sym);
 
@@ -453,6 +491,8 @@ lval_t *builtin_ne(lenv_t *e, lval_t *v) {
     return builtin_cmp(e, v, "!=");
 }
 
+/* logical builtins */
+
 lval_t *builtin_and(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LEXACT_ARGS(v, "&&", 2);
@@ -488,180 +528,4 @@ lval_t *builtin_not(lenv_t *e, lval_t *v) {
     return lval_bool(res);
 }
 
-lval_t *builtin_if(lenv_t *e, lval_t *v) {
-    LEXACT_ARGS(v, "if", 3);
-    LARG_TYPE(v, "if", 0, LVAL_BOOL);
-    LARG_TYPE(v, "if", 1, LVAL_QEXPR);
-    LARG_TYPE(v, "if", 2, LVAL_QEXPR);
-
-    lval_t *res = NULL;
-    lval_t *cond = v->val.l.cells[0];
-
-    if ( cond->val.intval ) {
-        res = lval_pop(v, 1);
-        res->type = LVAL_SEXPR;
-        res = lval_eval(e, res);
-    } else {
-        res = lval_pop(v, 2);
-        res->type = LVAL_SEXPR;
-        res = lval_eval(e, res);
-    }
-
-    lval_del(v);
-    return res;
-}
-
-lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
-
-    if ( f->type == LVAL_BUILTIN ) {
-        return f->val.builtin(e, v);
-    }
-
-    lfunc_t *func = f->val.fun;
-    lval_t **args = v->val.l.cells;
-    lval_t *formals = func->formals;
-
-    size_t given = v->val.l.count;
-    size_t total = formals->val.l.count;
-
-    while ( v->val.l.count > 0 ) {
- 
-        if ( formals->val.l.count == 0 &&
-            args[0]->type != LVAL_SEXPR ) {
-            /* Error case: non-symbolic parameter parsed */
-            lval_del(v);
-            return lval_err(
-                "Function passed too many arguments; "
-                "got %lu expected %lu",
-                given,
-                total
-            );
-        } else if ( formals->val.l.count == 0 &&
-            args[0]->type == LVAL_SEXPR &&
-            args[0]->val.l.count == 0 ) {
-            /* Function with no parameters case: can be called with a empty sexpr */
-            break;
-        }
-
-        lval_t *sym = lval_pop(formals, 0); /* unbound name */
-
-        if ( strcmp(sym->val.sym, "&") == 0 ) {
-            /* Variable argument case with '&' */
-            if ( formals->val.l.count != 1 ) {
-                lval_del(v);
-                return lval_err(
-                    "Function format invalid. "
-                    "Symbol '&' not followed by a single symbol."
-                );
-            }
-
-            /* Binding rest of the arguments to nsym */
-            lval_t *nsym = lval_pop(formals, 0);
-            lenv_put(func->env, nsym, builtin_list(e, v));
-            lval_del(sym);
-            lval_del(nsym);
-            break;
-        }
-
-        lval_t *val = lval_pop(v, 0); /* value to apply to unbound name */
-
-        lenv_put(func->env, sym, val);
-        lval_del(sym);
-        lval_del(val);
-    }
-
-    lval_del(v);
-
-    if ( formals->val.l.count > 0 &&
-        strcmp(formals->val.l.cells[0]->val.sym, "&") == 0 ) {
-        /* only first non-variable arguments was applied; create a empty qexpr  */
-
-        if ( formals->val.l.count != 2 ) {
-            return lval_err(
-                    "Function format invalid. "
-                    "Symbol '&' not followed by single symbol."
-                    );
-        }
-
-        /* Remove '&' */
-        lval_del(lval_pop(formals, 0));
-
-        /* Create a empty list for the next symbol */
-        lval_t *sym = lval_pop(formals, 0);
-        lval_t *val = lval_qexpr();
-
-        lenv_put(func->env, sym, val);
-        lval_del(sym);
-        lval_del(val);
-    }
-
-    if ( formals->val.l.count == 0 ) {
-        func->env->parent = e;
-        return builtin_eval( func->env, lval_add(lval_sexpr(), lval_copy(func->body)) );
-    }
-    return lval_copy(f);
-}
-
-
-lval_t *lval_eval_sexpr(lenv_t *e, lval_t *v) {
-
-    /* depth-first eval of sexpr */
-    for ( size_t i = 0; i < v->val.l.count; i++ ) {
-        v->val.l.cells[i] = lval_eval(e, v->val.l.cells[i]);
-    }
-
-    /* return first error */
-    for ( size_t i = 0; i < v->val.l.count; i++ ) {
-        if ( v->val.l.cells[i]->type == LVAL_ERR ) {
-            return lval_take(v, i);
-        }
-    }
-
-    /* empty sexpr */
-    if ( v->val.l.count == 0 ) {
-        return v;
-    }
-
-    /* hoist first lval if only one is available */
-    if ( v->val.l.count == 1 ) {
-        return lval_take(v, 0);
-    }
-
-    lval_t *f = lval_pop(v, 0);
-    lval_t *res = NULL;
-    char *t = NULL;
-
-    /* function evaluation */
-    switch ( f->type ) {
-        case LVAL_LAMBDA:
-        case LVAL_BUILTIN:
-            res = lval_call(e, f, v);
-            break;
-        default:
-            t = ltype_name(f->type);
-            lval_del(f);
-            lval_del(v);
-            return lval_err("Expected first argument of %s to be of type '%s'; got '%s'.", ltype_name(LVAL_SEXPR), ltype_name(LVAL_BUILTIN), t);
-    }
-
-    lval_del(f);
-    return res;
-}
-
-lval_t *lval_eval(lenv_t *e, lval_t *v) {
-    lval_t *x;
-    switch ( v->type ) {
-        case LVAL_SYM:
-            x = lenv_get(e, v);
-            lval_del(v);
-            return x;
-
-        case LVAL_SEXPR:
-            return lval_eval_sexpr(e, v);
-        default:
-            break;
-    }
-
-    return v;
-}
 

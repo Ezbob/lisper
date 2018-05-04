@@ -75,7 +75,7 @@ void lenv_add_builtins(lenv_t *e) {
     LENV_SYMBUILTIN("-", sub);
     LENV_SYMBUILTIN("*", mul);
     LENV_SYMBUILTIN("/", div);
-    LENV_SYMBUILTIN("%", fmod);
+    LENV_SYMBUILTIN("%", mod);
     LENV_SYMBUILTIN("^", pow);
     LENV_SYMBUILTIN("\\", lambda);
     LENV_SYMBUILTIN("=", put);

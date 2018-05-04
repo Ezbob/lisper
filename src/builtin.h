@@ -4,13 +4,11 @@
 #include "lval.h"
 #include "lenv.h"
 
-lval_t *lval_eval(lenv_t *, lval_t *);
-
 lval_t *builtin_add(lenv_t *, lval_t *);
 lval_t *builtin_sub(lenv_t *, lval_t *);
 lval_t *builtin_mul(lenv_t *, lval_t *);
 lval_t *builtin_div(lenv_t *, lval_t *);
-lval_t *builtin_fmod(lenv_t *, lval_t *);
+lval_t *builtin_mod(lenv_t *, lval_t *);
 lval_t *builtin_pow(lenv_t *, lval_t *);
 lval_t *builtin_min(lenv_t *, lval_t *);
 lval_t *builtin_max(lenv_t *, lval_t *);
