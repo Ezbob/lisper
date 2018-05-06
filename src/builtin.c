@@ -12,20 +12,17 @@
 #define LASSERT(args, cond, fmt, ...) \
     if ( !(cond) ) { lval_t *err = lval_err(fmt, ##__VA_ARGS__); lval_del(args); return err;  }
 
-#define LLEAST_ARGS(sym, funcname, numargs) \
-    LASSERT(sym, sym->val.l.count >= numargs, "Not enough arguments parsed to '%s'. Expected at least %lu argument(s); got %lu.", funcname, numargs, sym->val.l.count)
-
-#define LMOST_ARGS(sym, funcname, numargs) \
-    LASSERT(sym, sym->val.l.count <= numargs, "Too many arguments parsed to '%s'. Expected at most %lu argument(s); got %lu.", funcname,  numargs, sym->val.l.count)
-
-#define LEXACT_ARGS(sym, funcname, numargs) \
+#define LNUM_ARGS(sym, funcname, numargs) \
     LASSERT(sym, sym->val.l.count == numargs, "Wrong number of arguments parsed to '%s'. Expected at exactly %lu argument(s); got %lu. ", funcname, numargs, sym->val.l.count)
 
 #define LNOT_EMPTY_QEXPR(sym, funcname, i) \
     LASSERT(sym, sym->val.l.cells[i]->type == LVAL_QEXPR && sym->val.l.cells[i]->val.l.count > 0, "Empty %s parsed to '%s'.", ltype_name(sym->val.l.cells[i]->type, funcname))
 
 #define LARG_TYPE(sym, funcname, i, expected) \
-    LASSERT(sym, sym->val.l.cells[i]->type == expected, "Wrong type of argument parsed to '%s'. Expected '%s' got '%s'.", funcname, ltype_name(expected), ltype_name(sym->val.l.cells[i]->type));
+    LASSERT(sym, sym->val.l.cells[i]->type == expected, "Wrong type of argument parsed to '%s'. Expected argument to be of type '%s'; got '%s'.", funcname, ltype_name(expected), ltype_name(sym->val.l.cells[i]->type))
+
+#define LTWO_ARG_TYPES(sym, funcname, i, first_expect, second_expect) \
+    LASSERT(sym, sym->val.l.cells[i]->type == first_expect || sym->val.l.cells[i]->type == second_expect, "Wrong type of argument parsed to '%s'. Expected argument to be of type '%s' or '%s'; got '%s'.", funcname, ltype_name(first_expect), ltype_name(second_expect), ltype_name(sym->val.l.cells[i]->type))
 
 #define LENV_BUILTIN(name) lenv_add_builtin(e, #name, builtin_##name)
 #define LENV_SYMBUILTIN(sym, name) lenv_add_builtin(e, sym, builtin_##name)
@@ -193,7 +190,7 @@ lval_t *builtin_list(lenv_t *e, lval_t *v) {
 }
 
 lval_t *builtin_eval(lenv_t *e, lval_t *v) {
-    LEXACT_ARGS(v, "eval", 1);
+    LNUM_ARGS(v, "eval", 1);
     LARG_TYPE(v, "eval", 0, LVAL_QEXPR);
 
     lval_t *a = lval_take(v, 0);
@@ -221,7 +218,7 @@ lval_t *builtin_print(lenv_t *e, lval_t *v) {
 
 lval_t *builtin_error(lenv_t *e, lval_t *v) {
     UNUSED(e);
-    LEXACT_ARGS(v, "error", 1);
+    LNUM_ARGS(v, "error", 1);
     LARG_TYPE(v, "error", 0, LVAL_STR);
 
     lval_t *err = lval_err(v->val.l.cells[0]->val.str);
@@ -235,67 +232,107 @@ lval_t *builtin_error(lenv_t *e, lval_t *v) {
 
 lval_t *builtin_tail(lenv_t *e, lval_t *v) {
     UNUSED(e);
-    LEXACT_ARGS(v, "tail", 1);
-    LARG_TYPE(v, "tail", 0, LVAL_QEXPR);
+    LNUM_ARGS(v, "tail", 1);
+    LTWO_ARG_TYPES(v, "tail", 0, LVAL_QEXPR, LVAL_STR);
 
     lval_t *a = lval_take(v, 0);
-    if ( a->val.l.count > 0 ) {
-        lval_del(lval_pop(a, 0));
+
+    if ( a->type == LVAL_STR ) {
+        if ( strlen(a->val.str) > 1 ) {
+            lval_t *tail = lval_str(a->val.str + 1);
+            lval_del(a);
+            return tail;
+        }
+        lval_del(a);
+        return lval_str("");
+    } else {
+
+        if ( a->val.l.count > 0 ) {
+            lval_del(lval_pop(a, 0));
+        }
+        return a;
     }
-    return a;
 }
 
 lval_t *builtin_head(lenv_t *e, lval_t *v) {
     UNUSED(e);
-    LEXACT_ARGS(v, "head", 1);
-    LARG_TYPE(v, "head", 0, LVAL_QEXPR);
+    LNUM_ARGS(v, "head", 1);
+    LTWO_ARG_TYPES(v, "head", 0, LVAL_QEXPR, LVAL_STR);
 
     lval_t *a = lval_take(v, 0);
 
-    while ( a->val.l.count > 1 ) {
-        lval_del(lval_pop(a, 1));
-    }
+    if ( a->type == LVAL_STR ) {
+        if ( strlen(a->val.str) > 1 ) {
+            char second = a->val.str[1];
+            a->val.str[1] = '\0';
 
-    return a;
+            lval_t *head = lval_str(a->val.str);
+            a->val.str[1] = second;
+
+            lval_del(a);
+            return head;
+        }
+        lval_del(a);
+        return lval_str("");
+    } else {
+        while ( a->val.l.count > 1 ) {
+            lval_del(lval_pop(a, 1));
+        }
+        return a;
+    }
 }
 
 lval_t *builtin_join(lenv_t *e, lval_t *v) {
     UNUSED(e);
     for ( size_t i = 0; i < v->val.l.count; ++i ) {
-        LARG_TYPE(v, "join", i, LVAL_QEXPR);
+        LTWO_ARG_TYPES(v, "join", i, LVAL_QEXPR, LVAL_STR);
     }
 
     lval_t *a = lval_pop(v, 0);
-    while ( v->val.l.count ) {
-        a = lval_join(a, lval_pop(v, 0));
+
+    if ( a->type == LVAL_STR ) {
+        while ( v->val.l.count ) {
+            a = lval_join_str(a, lval_pop(v, 0));
+        }
+        lval_del(v);
+        return a;
+    } else {
+        while ( v->val.l.count ) {
+            a = lval_join(a, lval_pop(v, 0));
+        }
+
+        lval_del(v);
+        return a;
     }
 
-    lval_del(v);
-
-    return a;
 }
 
 lval_t *builtin_cons(lenv_t *e, lval_t *v) {
     UNUSED(e);
-    LEXACT_ARGS(v, "cons", 2);
+    LNUM_ARGS(v, "cons", 2);
     LARG_TYPE(v, "cons", 1, LVAL_QEXPR);
 
-    lval_t *otherval = lval_pop(v, 0);
-    lval_t *qexpr = lval_pop(v, 0);
+    lval_t *consvalue = lval_pop(v, 0);
+    lval_t *collection = lval_pop(v, 0);
 
-    lval_offer(qexpr, otherval);
+    lval_offer(collection, consvalue);
 
     lval_del(v);
-    return qexpr;
+    return collection;
 }
 
 lval_t *builtin_len(lenv_t *e, lval_t *v) {
     UNUSED(e);
-    LEXACT_ARGS(v, "len", 1);
-    LARG_TYPE(v, "len", 0, LVAL_QEXPR);
+    LNUM_ARGS(v, "len", 1);
+    LTWO_ARG_TYPES(v, "len", 0, LVAL_QEXPR, LVAL_STR);
 
     lval_t *arg = v->val.l.cells[0];
-    size_t count = arg->val.l.count;
+    size_t count = 0;
+    if ( arg->type == LVAL_STR ) {
+        count = strlen(arg->val.str);
+    } else {
+        count = arg->val.l.count;
+    }
 
     lval_del(v);
     return lval_int(count);
@@ -303,22 +340,37 @@ lval_t *builtin_len(lenv_t *e, lval_t *v) {
 
 lval_t *builtin_init(lenv_t *e, lval_t *v) {
     UNUSED(e);
-    LEXACT_ARGS(v, "init", 1);
-    LARG_TYPE(v, "init", 0, LVAL_QEXPR);
+    LNUM_ARGS(v, "init", 1);
+    LTWO_ARG_TYPES(v, "init", 0, LVAL_QEXPR, LVAL_STR);
 
-    lval_t *qexpr = lval_pop(v, 0);
-    if ( qexpr->val.l.count > 0 ) {
-        lval_del(lval_pop(qexpr, (qexpr->val.l.count - 1) ));
+    lval_t *collection = lval_pop(v, 0);
+
+    if ( collection->type == LVAL_QEXPR ) {
+        if ( collection->val.l.count > 0 ) {
+            lval_del(lval_pop(collection, (collection->val.l.count - 1) ));
+        }
+    } else {
+        size_t origsize = strlen(collection->val.str);
+        collection->val.str[origsize - 1] = '\0';
+        char *resized = realloc(collection->val.str, origsize);
+        if ( resized == NULL ) {
+            perror("Could not resize char array");
+            lval_del(v);
+            lenv_del(e);
+            exit(1);
+        }
+        collection->val.str = resized;
     }
+
     lval_del(v);
-    return qexpr;
+    return collection;
 }
 
 /* * control flow builtins  * */
 
 lval_t *builtin_exit(lenv_t *e, lval_t *v) {
     UNUSED(e);
-    LEXACT_ARGS(v, "exit", 1);
+    LNUM_ARGS(v, "exit", 1);
     LARG_TYPE(v, "exit", 0, LVAL_INT);
 
     int exit_code = (int) (v->val.l.cells[0]->val.intval);
@@ -330,7 +382,7 @@ lval_t *builtin_exit(lenv_t *e, lval_t *v) {
 }
 
 lval_t *builtin_if(lenv_t *e, lval_t *v) {
-    LEXACT_ARGS(v, "if", 3);
+    LNUM_ARGS(v, "if", 3);
     LARG_TYPE(v, "if", 0, LVAL_BOOL);
     LARG_TYPE(v, "if", 1, LVAL_QEXPR);
     LARG_TYPE(v, "if", 2, LVAL_QEXPR);
@@ -356,7 +408,7 @@ lval_t *builtin_if(lenv_t *e, lval_t *v) {
 
 lval_t *builtin_type(lenv_t *e, lval_t *v) {
     UNUSED(e);
-    LEXACT_ARGS(v, "type", 1);
+    LNUM_ARGS(v, "type", 1);
 
     char *t = ltype_name(v->val.l.cells[0]->type);
 
@@ -368,7 +420,7 @@ lval_t *builtin_type(lenv_t *e, lval_t *v) {
 
 lval_t *builtin_lambda(lenv_t *e, lval_t *v) {
     UNUSED(e);
-    LEXACT_ARGS(v, "\\", 2);
+    LNUM_ARGS(v, "\\", 2);
     LARG_TYPE(v, "\\", 0, LVAL_QEXPR);
     LARG_TYPE(v, "\\", 1, LVAL_QEXPR);
 
@@ -388,7 +440,7 @@ lval_t *builtin_lambda(lenv_t *e, lval_t *v) {
 }
 
 lval_t *builtin_fun(lenv_t *e, lval_t*v) {
-    LEXACT_ARGS(v, "fun", 2);
+    LNUM_ARGS(v, "fun", 2);
     LARG_TYPE(v, "fun", 0, LVAL_QEXPR);
     LARG_TYPE(v, "fun", 1, LVAL_QEXPR);
 
@@ -475,7 +527,7 @@ lval_t *builtin_ge(lenv_t *e, lval_t *v) {
 
 lval_t *builtin_ord(lenv_t *e, lval_t *v, char *sym) {
     UNUSED(e);
-    LEXACT_ARGS(v, sym, 2);
+    LNUM_ARGS(v, sym, 2);
 
     lval_t *lhs = v->val.l.cells[0];
     lval_t *rhs = v->val.l.cells[1];
@@ -501,7 +553,7 @@ lval_t *builtin_ord(lenv_t *e, lval_t *v, char *sym) {
 
 lval_t *builtin_cmp(lenv_t *e, lval_t *v, char *sym) {
     UNUSED(e);
-    LEXACT_ARGS(v, sym, 2);
+    LNUM_ARGS(v, sym, 2);
 
     lval_t *lhs = v->val.l.cells[0];
     lval_t *rhs = v->val.l.cells[1];
@@ -529,7 +581,7 @@ lval_t *builtin_ne(lenv_t *e, lval_t *v) {
 
 lval_t *builtin_and(lenv_t *e, lval_t *v) {
     UNUSED(e);
-    LEXACT_ARGS(v, "&&", 2);
+    LNUM_ARGS(v, "&&", 2);
     LARG_TYPE(v, "&&", 0, LVAL_BOOL);
     LARG_TYPE(v, "&&", 1, LVAL_BOOL);
 
@@ -541,7 +593,7 @@ lval_t *builtin_and(lenv_t *e, lval_t *v) {
 
 lval_t *builtin_or(lenv_t *e, lval_t *v) {
     UNUSED(e);
-    LEXACT_ARGS(v, "||", 2);
+    LNUM_ARGS(v, "||", 2);
     LARG_TYPE(v, "||", 0, LVAL_BOOL);
     LARG_TYPE(v, "||", 1, LVAL_BOOL);
 
@@ -553,7 +605,7 @@ lval_t *builtin_or(lenv_t *e, lval_t *v) {
 
 lval_t *builtin_not(lenv_t *e, lval_t *v) {
     UNUSED(e);
-    LEXACT_ARGS(v, "!", 1);
+    LNUM_ARGS(v, "!", 1);
     LARG_TYPE(v, "!", 0, LVAL_BOOL);
 
     long long res = !v->val.l.cells[0]->val.intval;
@@ -566,7 +618,7 @@ lval_t *builtin_not(lenv_t *e, lval_t *v) {
 
 lval_t *builtin_load(lenv_t *e, lval_t *v) {
 
-    LEXACT_ARGS(v, "load", 1);
+    LNUM_ARGS(v, "load", 1);
     LARG_TYPE(v, "load", 0, LVAL_STR);
 
     mpc_result_t r;

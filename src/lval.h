@@ -72,6 +72,7 @@ lval_t *lval_lambda(lval_t *, lval_t *);
 lval_t *lval_add(lval_t *, lval_t *);
 lval_t *lval_offer(lval_t *, lval_t *);
 lval_t *lval_join(lval_t *, lval_t *);
+lval_t *lval_join_str(lval_t *, lval_t *);
 lval_t *lval_pop(lval_t *, int);
 lval_t *lval_take(lval_t *, int); /* same as pop except frees input lval */
 lval_t *lval_copy(lval_t *);

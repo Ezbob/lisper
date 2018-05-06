@@ -273,6 +273,24 @@ lval_t *lval_offer(lval_t *val, lval_t *other) {
     return val;
 }
 
+lval_t *lval_join_str(lval_t *x, lval_t *y) {
+    size_t cpy_start = strlen(x->val.str);
+    size_t total_size = cpy_start + strlen(y->val.str);
+
+    char *resized = realloc(x->val.str, total_size + 1);
+    if ( resized == NULL ) {
+        perror("Fatal memory error when trying reallocating for join_str");
+        lval_del(x);
+        lval_del(y);
+        exit(1);
+    }
+    x->val.str = resized;
+    strcpy(x->val.str + cpy_start, y->val.str);
+
+    lval_del(y);
+    return x;
+}
+
 lval_t *lval_join(lval_t *x, lval_t *y) {
     while ( y->val.l.count ) {
         x = lval_add(x, lval_pop(y, 0));
