@@ -198,6 +198,42 @@ lval_t *builtin_eval(lenv_t *e, lval_t *v) {
     return lval_eval(e, a);
 }
 
+lval_t *builtin_read(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LNUM_ARGS(v, "read", 1);
+    LARG_TYPE(v, "read", 0, LVAL_STR);
+
+    mpc_result_t r;
+    if ( mpc_parse("input", v->val.l.cells[0]->val.str, elems.Lisper, &r) ) {
+        lval_t *expr = lval_read(r.output);
+        mpc_ast_delete(r.output);
+
+        lval_del(v);
+        return builtin_list(e, expr);
+    }
+
+    /* parse error */
+    char *err_msg = mpc_err_string(r.error);
+    mpc_err_delete(r.error);
+
+    lval_t *err = lval_err("Could parse str %s", err_msg);
+    free(err_msg);
+    lval_del(v);
+
+    return err;
+}
+
+lval_t *builtin_show(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LNUM_ARGS(v, "show", 1);
+    LARG_TYPE(v, "show", 0, LVAL_STR);
+
+    puts(v->val.l.cells[0]->val.str);
+
+    lval_del(v);
+    return lval_sexpr();
+}
+
 /* * IO builtins * */
 
 lval_t *builtin_print(lenv_t *e, lval_t *v) {
@@ -672,7 +708,8 @@ void register_builtins(lenv_t *e) {
     LENV_BUILTIN(load);
     LENV_BUILTIN(error);
     LENV_BUILTIN(print);
-
+    LENV_BUILTIN(read);
+    LENV_BUILTIN(show);
 
     LENV_SYMBUILTIN("+", add);
     LENV_SYMBUILTIN("-", sub);
