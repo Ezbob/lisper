@@ -15,9 +15,12 @@ CFLAGS+=-g
 SYMBOLS+=_DEBUG
 endif
 
-.PHONY: all clean
+.PHONY: all clean debug
 
 all: $(TARGET)
+
+debug:
+	DEBUG=1 $(MAKE) all
 
 $(TARGET): $(OBJS) $(HDRS)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDLIBS)
