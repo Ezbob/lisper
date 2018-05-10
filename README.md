@@ -10,6 +10,7 @@ Repo for a implementation of lisp, following the [buildyourownlisp.com](http://w
 - Source file import
 - User defined functions and lambdas
 - User defined immutable values 
+- Read Eval Print Loop (REPL) support
 
 ## Setup
 
