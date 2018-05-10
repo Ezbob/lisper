@@ -90,6 +90,14 @@ lfunc_t *lfunc_new(lenv_t *env, lval_t *formals, lval_t *body) {
     return new;
 }
 
+lfile_t *lfile_new(lval_t *path, lval_t *mode, FILE *fp) {
+    lfile_t *new = malloc(sizeof(lfile_t));
+    new->path = path;
+    new->mode = mode;
+    new->fp = fp;
+    return new;
+}
+
 lval_t *lval_lambda(lval_t *formals, lval_t *body) {
     lval_t *nw = malloc(sizeof(lval_t));
     nw->type = LVAL_LAMBDA;
@@ -97,7 +105,15 @@ lval_t *lval_lambda(lval_t *formals, lval_t *body) {
     return nw;
 }
 
+lval_t *lval_file(lval_t *path, lval_t *mode, FILE *fp) {
+    lval_t *nw = malloc(sizeof(lval_t));
+    nw->type = LVAL_FILE;
+    nw->val.file = lfile_new(path, mode, fp);
+    return nw;
+}
+
 void lfunc_del(lfunc_t *);
+void lfile_del(lfile_t *);
 
 void lval_del(lval_t *val) {
     switch (val->type) {
@@ -108,6 +124,9 @@ void lval_del(lval_t *val) {
             break;
         case LVAL_LAMBDA:
             lfunc_del(val->val.fun);
+            break;
+        case LVAL_FILE:
+            lfile_del(val->val.file);
             break;
         case LVAL_ERR:
         case LVAL_SYM:
@@ -122,6 +141,13 @@ void lval_del(lval_t *val) {
             break;
     }
     free(val);
+}
+
+void lfile_del(lfile_t *f) {
+    lval_del(f->path);
+    lval_del(f->mode);
+    fclose(f->fp);
+    free(f);
 }
 
 void lfunc_del(lfunc_t *f) {
@@ -195,6 +221,13 @@ void lval_print(lval_t *val) {
             break;
         case LVAL_BUILTIN:
             printf("<builtin>");
+            break;
+        case LVAL_FILE:
+            printf("<file ");
+            lval_print(val->val.file->path);
+            printf(" @ mode ");
+            lval_print(val->val.file->mode);
+            printf(">");
             break;
     }
 }
@@ -387,6 +420,9 @@ lval_t *lval_copy(lval_t *v) {
 
     lval_t *x = malloc(sizeof(lval_t));
     x->type = v->type;
+    lval_t *p;
+    FILE *fp;
+    lval_t *m;
 
     switch(v->type) {
         case LVAL_LAMBDA:
@@ -420,7 +456,13 @@ lval_t *lval_copy(lval_t *v) {
                 x->val.l.cells[i] = lval_copy(v->val.l.cells[i]);
             }
             break;
-    }
+        case LVAL_FILE:
+            p = lval_copy(v->val.file->path);
+            m = lval_copy(v->val.file->mode);
+            fp = fopen(p->val.strval, m->val.strval);
+            x->val.file = lfile_new(p, m, fp);
+            break;
+     }
 
     return x;
 }
@@ -439,12 +481,16 @@ int lval_eq(lval_t *x, lval_t *y) {
         case LVAL_ERR:
         case LVAL_SYM:
         case LVAL_STR:
-            return strcmp(x->val.strval, x->val.strval) == 0;
+            return strcmp(x->val.strval, y->val.strval) == 0;
         case LVAL_BUILTIN:
             return (x->val.builtin == y->val.builtin);
         case LVAL_LAMBDA:
             return lval_eq(x->val.fun->formals, y->val.fun->formals) &&
                  lval_eq(x->val.fun->body, y->val.fun->body);
+        case LVAL_FILE:
+            return lval_eq(x->val.file->path, y->val.file->path) &&
+                lval_eq(x->val.file->mode, y->val.file->mode) &&
+                x->val.file->fp == y->val.file->fp;
         case LVAL_QEXPR:
         case LVAL_SEXPR:
             if ( x->val.l.count != y->val.l.count ) {

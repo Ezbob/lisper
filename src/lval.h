@@ -13,6 +13,7 @@ typedef enum ltype {
     LVAL_QEXPR,
     LVAL_BUILTIN,
     LVAL_LAMBDA,
+    LVAL_FILE,
     LVAL_BOOL,
     LVAL_STR
 } ltype;
@@ -36,6 +37,12 @@ typedef struct lfunc_t {
     lval_t *body;
 } lfunc_t;
 
+typedef struct lfile_t {
+    lval_t *path;
+    lval_t *mode;
+    FILE *fp;
+} lfile_t;
+
 struct lval_t {
     ltype type;
     union val {
@@ -45,6 +52,7 @@ struct lval_t {
         lcells_t l;
         lbuiltin builtin;
         lfunc_t *fun;
+        lfile_t *file;
     } val;
 };
 
@@ -65,6 +73,7 @@ lval_t *lval_builtin(lbuiltin);
 lval_t *lval_sexpr(void);
 lval_t *lval_qexpr(void);
 lval_t *lval_lambda(lval_t *, lval_t *);
+lval_t *lval_file(lval_t *, lval_t *, FILE *);
 
 /* lval transformers */
 lval_t *lval_add(lval_t *, lval_t *);

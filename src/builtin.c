@@ -250,6 +250,77 @@ lval_t *builtin_print(lenv_t *e, lval_t *v) {
     return lval_sexpr();
 }
 
+lval_t *builtin_open(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LNUM_ARGS(v, "open", 2);
+    LARG_TYPE(v, "open", 0, LVAL_STR);
+    LARG_TYPE(v, "open", 1, LVAL_STR);
+
+    lval_t *filename = lval_pop(v, 0);
+    lval_t *mode = lval_pop(v, 0);
+
+    char *m = mode->val.strval;
+    char *path = filename->val.strval;
+    FILE *fp;
+
+    if ( !(strcmp(m, "r") == 0 ||
+           strcmp(m, "r+") == 0 ||
+           strcmp(m, "w") == 0 ||
+           strcmp(m, "w+") == 0 ||
+           strcmp(m, "a") == 0 ||
+           strcmp(m, "a+") == 0) ) {
+        lval_t *err = lval_err("Mode not set to either 'r', 'r+', 'w', 'w+', 'a' or 'a+'");
+        lval_del(mode);
+        lval_del(filename);
+        lval_del(v);
+        return err;
+    }
+
+    if ( strlen(path) == 0 ) {
+        lval_del(mode);
+        lval_del(filename);
+        lval_del(v);
+        return lval_err("Empty file path");
+    }
+
+    fp = fopen(path, m);
+
+    lval_del(v);
+    return lval_file(filename, mode, fp);
+}
+
+lval_t *builtin_close(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LNUM_ARGS(v, "close", 1);
+    LARG_TYPE(v, "close", 0, LVAL_FILE);
+
+    lval_t *f = v->val.l.cells[0];
+
+    if ( fclose(f->val.file->fp) != 0 ) {
+        lval_del(v);
+        return lval_err("Cloud not close file: '%s'", f->val.file->path);
+    }
+
+    lval_del(v);
+    return lval_sexpr();
+}
+
+lval_t *builtin_flush(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LNUM_ARGS(v, "flush", 1);
+    LARG_TYPE(v, "flush", 0, LVAL_FILE);
+
+    lval_t *f = v->val.l.cells[0];
+
+    if ( fflush(f->val.file->fp) != 0 ) {
+        lval_del(v);
+        return lval_err("Cloud not flush file buffer for: '%s'", f->val.file->path);
+    }
+
+    lval_del(v);
+    return lval_sexpr();
+}
+
 /* * error builtins * */
 
 lval_t *builtin_error(lenv_t *e, lval_t *v) {
@@ -710,6 +781,9 @@ void register_builtins(lenv_t *e) {
     LENV_BUILTIN(print);
     LENV_BUILTIN(read);
     LENV_BUILTIN(show);
+    LENV_BUILTIN(open);
+    LENV_BUILTIN(close);
+    LENV_BUILTIN(flush);
 
     LENV_SYMBUILTIN("+", add);
     LENV_SYMBUILTIN("-", sub);
