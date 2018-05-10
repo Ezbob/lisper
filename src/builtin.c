@@ -204,7 +204,7 @@ lval_t *builtin_read(lenv_t *e, lval_t *v) {
     LARG_TYPE(v, "read", 0, LVAL_STR);
 
     mpc_result_t r;
-    if ( mpc_parse("input", v->val.l.cells[0]->val.str, elems.Lisper, &r) ) {
+    if ( mpc_parse("input", v->val.l.cells[0]->val.strval, elems.Lisper, &r) ) {
         lval_t *expr = lval_read(r.output);
         mpc_ast_delete(r.output);
 
@@ -228,7 +228,7 @@ lval_t *builtin_show(lenv_t *e, lval_t *v) {
     LNUM_ARGS(v, "show", 1);
     LARG_TYPE(v, "show", 0, LVAL_STR);
 
-    puts(v->val.l.cells[0]->val.str);
+    puts(v->val.l.cells[0]->val.strval);
 
     lval_del(v);
     return lval_sexpr();
@@ -257,7 +257,7 @@ lval_t *builtin_error(lenv_t *e, lval_t *v) {
     LNUM_ARGS(v, "error", 1);
     LARG_TYPE(v, "error", 0, LVAL_STR);
 
-    lval_t *err = lval_err(v->val.l.cells[0]->val.str);
+    lval_t *err = lval_err(v->val.l.cells[0]->val.strval);
 
     lval_del(v);
     return err;
@@ -274,8 +274,8 @@ lval_t *builtin_tail(lenv_t *e, lval_t *v) {
     lval_t *a = lval_take(v, 0);
 
     if ( a->type == LVAL_STR ) {
-        if ( strlen(a->val.str) > 1 ) {
-            lval_t *tail = lval_str(a->val.str + 1);
+        if ( strlen(a->val.strval) > 1 ) {
+            lval_t *tail = lval_str(a->val.strval + 1);
             lval_del(a);
             return tail;
         }
@@ -298,12 +298,12 @@ lval_t *builtin_head(lenv_t *e, lval_t *v) {
     lval_t *a = lval_take(v, 0);
 
     if ( a->type == LVAL_STR ) {
-        if ( strlen(a->val.str) > 1 ) {
-            char second = a->val.str[1];
-            a->val.str[1] = '\0';
+        if ( strlen(a->val.strval) > 1 ) {
+            char second = a->val.strval[1];
+            a->val.strval[1] = '\0';
 
-            lval_t *head = lval_str(a->val.str);
-            a->val.str[1] = second;
+            lval_t *head = lval_str(a->val.strval);
+            a->val.strval[1] = second;
 
             lval_del(a);
             return head;
@@ -365,7 +365,7 @@ lval_t *builtin_len(lenv_t *e, lval_t *v) {
     lval_t *arg = v->val.l.cells[0];
     size_t count = 0;
     if ( arg->type == LVAL_STR ) {
-        count = strlen(arg->val.str);
+        count = strlen(arg->val.strval);
     } else {
         count = arg->val.l.count;
     }
@@ -386,16 +386,16 @@ lval_t *builtin_init(lenv_t *e, lval_t *v) {
             lval_del(lval_pop(collection, (collection->val.l.count - 1) ));
         }
     } else {
-        size_t origsize = strlen(collection->val.str);
-        collection->val.str[origsize - 1] = '\0';
-        char *resized = realloc(collection->val.str, origsize);
+        size_t origsize = strlen(collection->val.strval);
+        collection->val.strval[origsize - 1] = '\0';
+        char *resized = realloc(collection->val.strval, origsize);
         if ( resized == NULL ) {
             perror("Could not resize char array");
             lval_del(v);
             lenv_del(e);
             exit(1);
         }
-        collection->val.str = resized;
+        collection->val.strval = resized;
     }
 
     lval_del(v);
@@ -658,7 +658,7 @@ lval_t *builtin_load(lenv_t *e, lval_t *v) {
     LARG_TYPE(v, "load", 0, LVAL_STR);
 
     mpc_result_t r;
-    if ( mpc_parse_contents(v->val.l.cells[0]->val.str, elems.Lisper, &r) ) {
+    if ( mpc_parse_contents(v->val.l.cells[0]->val.strval, elems.Lisper, &r) ) {
 
         lval_t *expr = lval_read(r.output);
         mpc_ast_delete(r.output);

@@ -55,7 +55,7 @@ void lenv_add_builtin(lenv_t *e, char *name, lbuiltin func) {
 lval_t *lenv_get(lenv_t *e, lval_t *k) {
 
     for ( size_t i = 0; i < e->count; ++i ) {
-        if ( strcmp(e->syms[i], k->val.sym) == 0 ) {
+        if ( strcmp(e->syms[i], k->val.strval) == 0 ) {
             return lval_copy(e->vals[i]);
         }
     }
@@ -64,14 +64,14 @@ lval_t *lenv_get(lenv_t *e, lval_t *k) {
         return lenv_get(e->parent, k);
     }
 
-    return lval_err("Unbound symbol '%s'", k->val.sym);
+    return lval_err("Unbound symbol '%s'", k->val.strval);
 }
 
 void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
 
     for ( size_t i = 0; i < e->count; ++i ) {
         /* linear search for sym name */
-        if ( strcmp(e->syms[i], k->val.sym) == 0 ) {
+        if ( strcmp(e->syms[i], k->val.strval) == 0 ) {
             lval_del(e->vals[i]);
             e->vals[i] = lval_copy(v); /* override already existing value */
             return;
@@ -83,8 +83,8 @@ void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
     e->syms = realloc(e->syms, sizeof(lval_t *) * e->count); /* FIXME probably check for NULL  */
 
     e->vals[e->count - 1] = lval_copy(v);
-    e->syms[e->count - 1] = malloc(strlen(k->val.sym) + 1);
-    strcpy(e->syms[e->count - 1], k->val.sym);
+    e->syms[e->count - 1] = malloc(strlen(k->val.strval) + 1);
+    strcpy(e->syms[e->count - 1], k->val.strval);
 
 }
 

@@ -35,9 +35,9 @@ lval_t *lval_err(char *fmt, ...) {
     va_list va;
     va_start(va, fmt);
 
-    val->val.err = malloc(512 * sizeof(char));
-    vsnprintf(val->val.err, 511, fmt, va);
-    val->val.err = realloc(val->val.err, strlen(val->val.err) + 1);
+    val->val.strval = malloc(512 * sizeof(char));
+    vsnprintf(val->val.strval, 511, fmt, va);
+    val->val.strval = realloc(val->val.strval, strlen(val->val.strval) + 1);
 
     va_end(va); 
     return val;
@@ -46,8 +46,8 @@ lval_t *lval_err(char *fmt, ...) {
 lval_t *lval_sym(char* sym) {
     lval_t *val = malloc(sizeof(lval_t));
     val->type = LVAL_SYM;
-    val->val.sym = malloc(strlen(sym) + 1);
-    strcpy(val->val.sym, sym);
+    val->val.strval = malloc(strlen(sym) + 1);
+    strcpy(val->val.strval, sym);
     return val;
 }
 
@@ -70,8 +70,8 @@ lval_t *lval_qexpr(void) {
 lval_t *lval_str(char *s) {
     lval_t *v = malloc(sizeof(lval_t));
     v->type = LVAL_STR;
-    v->val.str = malloc(strlen(s) + 1);
-    strcpy(v->val.str, s);
+    v->val.strval = malloc(strlen(s) + 1);
+    strcpy(v->val.strval, s);
     return v;
 }
 
@@ -110,13 +110,9 @@ void lval_del(lval_t *val) {
             lfunc_del(val->val.fun);
             break;
         case LVAL_ERR:
-            free(val->val.err);
-            break;
         case LVAL_SYM:
-            free(val->val.sym);
-            break;
         case LVAL_STR:
-            free(val->val.str);
+            free(val->val.strval);
             break;
         case LVAL_QEXPR:
         case LVAL_SEXPR:
@@ -151,8 +147,8 @@ void lval_expr_print(lval_t *val, char prefix, char suffix) {
 
 void lval_print_str(lval_t *v) {
 
-    char *escaped = malloc(strlen(v->val.str) + 1);
-    strcpy(escaped, v->val.str);
+    char *escaped = malloc(strlen(v->val.strval) + 1);
+    strcpy(escaped, v->val.strval);
 
     escaped = mpcf_escape(escaped);
     printf("\"%s\"", escaped);
@@ -176,10 +172,10 @@ void lval_print(lval_t *val) {
             }
             break;
         case LVAL_ERR:
-            printf("Error: %s", val->val.err);
+            printf("Error: %s", val->val.strval);
             break;
         case LVAL_SYM:
-            printf("%s", val->val.sym);
+            printf("%s", val->val.strval);
             break;
         case LVAL_STR:
             lval_print_str(val);
@@ -265,7 +261,7 @@ lval_t *lval_offer(lval_t *val, lval_t *other) {
     }
     val->val.l.cells = resized;
     memmove(val->val.l.cells + 1, val->val.l.cells, (val->val.l.count - 1) * sizeof(lval_t*));
-        // move memory at address val->val.l.cells (op to old count of cells) to addr val->val.l.cells[1]
+        // move memory at address val->val.l.cells (up to old count of cells) to addr val->val.l.cells[1]
 
     val->val.l.cells[0] = other;
         // insert into the front of the array
@@ -274,18 +270,18 @@ lval_t *lval_offer(lval_t *val, lval_t *other) {
 }
 
 lval_t *lval_join_str(lval_t *x, lval_t *y) {
-    size_t cpy_start = strlen(x->val.str);
-    size_t total_size = cpy_start + strlen(y->val.str);
+    size_t cpy_start = strlen(x->val.strval);
+    size_t total_size = cpy_start + strlen(y->val.strval);
 
-    char *resized = realloc(x->val.str, total_size + 1);
+    char *resized = realloc(x->val.strval, total_size + 1);
     if ( resized == NULL ) {
         perror("Fatal memory error when trying reallocating for join_str");
         lval_del(x);
         lval_del(y);
         exit(1);
     }
-    x->val.str = resized;
-    strcpy(x->val.str + cpy_start, y->val.str);
+    x->val.strval = resized;
+    strcpy(x->val.strval + cpy_start, y->val.strval);
 
     lval_del(y);
     return x;
@@ -303,11 +299,14 @@ lval_t *lval_join(lval_t *x, lval_t *y) {
 lval_t *lval_read_str(mpc_ast_t *t) {
 
     t->contents[strlen(t->contents) - 1] = '\0';
+        /* clip off the newline */
 
     char *unescaped = malloc(strlen(t->contents + 1) + 1);
     strcpy(unescaped, t->contents + 1);
+        /*  but make room for the newline in the unescaped output */
 
     unescaped = mpcf_unescape(unescaped);
+        /* unescape probably inserts a newline into the string */
     lval_t *str = lval_str(unescaped);
 
     free(unescaped);
@@ -403,21 +402,15 @@ lval_t *lval_copy(lval_t *v) {
         case LVAL_FLOAT:
             x->val.floatval = v->val.floatval;
             break;
+        case LVAL_ERR:
+        case LVAL_SYM:
         case LVAL_STR:
-            x->val.str = malloc(strlen(v->val.str) + 1);
-            strcpy(x->val.str, v->val.str);
+            x->val.strval = malloc((strlen(v->val.strval) + 1) * sizeof(char));
+            strcpy(x->val.strval, v->val.strval);
             break;
         case LVAL_INT:
         case LVAL_BOOL:
             x->val.intval = v->val.intval;
-            break;
-        case LVAL_ERR:
-            x->val.err = calloc((strlen(v->val.err) + 1), sizeof(char));
-            strcpy(x->val.err, v->val.err);
-            break;
-        case LVAL_SYM:
-            x->val.sym = calloc((strlen(v->val.sym) + 1), sizeof(char));
-            strcpy(x->val.sym, v->val.sym);
             break;
         case LVAL_SEXPR:
         case LVAL_QEXPR:
@@ -444,9 +437,9 @@ int lval_eq(lval_t *x, lval_t *y) {
         case LVAL_INT:
             return (x->val.intval == y->val.intval);
         case LVAL_ERR:
-            return (strcmp(x->val.err, y->val.err) == 0);
         case LVAL_SYM:
-            return (strcmp(x->val.sym, y->val.sym) == 0);
+        case LVAL_STR:
+            return strcmp(x->val.strval, x->val.strval) == 0;
         case LVAL_BUILTIN:
             return (x->val.builtin == y->val.builtin);
         case LVAL_LAMBDA:
@@ -463,8 +456,6 @@ int lval_eq(lval_t *x, lval_t *y) {
                 }
             }
             return 1;
-        case LVAL_STR:
-            return strcmp(x->val.str, x->val.str) == 0;
     }
     return 0;
 }
@@ -473,6 +464,10 @@ char *ltype_name(ltype t) {
     switch ( t ) {
         case LVAL_SYM:
             return "symbol";
+        case LVAL_ERR:
+            return "error";
+        case LVAL_STR:
+            return "string";
         case LVAL_BUILTIN:
             return "builtin";
         case LVAL_LAMBDA:
@@ -483,14 +478,10 @@ char *ltype_name(ltype t) {
             return "boolean";
         case LVAL_INT:
             return "integer";
-        case LVAL_STR:
-            return "string";
         case LVAL_QEXPR:
             return "q-expression";
         case LVAL_SEXPR:
             return "s-expression";
-        case LVAL_ERR:
-            return "error";
         default:
             break;
     }
@@ -507,17 +498,12 @@ void lval_depth_print(lval_t *v, size_t depth) {
 
     lval_println(v);
 
-    switch ( v->type ) {
-        case LVAL_QEXPR:
-        case LVAL_SEXPR:
-            for ( size_t i = 0; i < v->val.l.count; ++i ) {
-                lval_depth_print(v->val.l.cells[i], depth + 1);
-            }
-            break;
-        default:
-            break;
+    /* only q-expressions and s-expression has children */
+    if ( v->type == LVAL_QEXPR || v->type == LVAL_SEXPR ) {
+        for ( size_t i = 0; i < v->val.l.count; ++i ) {
+            lval_depth_print(v->val.l.cells[i], depth + 1);
+        }
     }
-
 }
 
 void lval_pretty_print(lval_t *v) {
@@ -558,7 +544,7 @@ lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
 
         lval_t *sym = lval_pop(formals, 0); /* unbound name */
 
-        if ( strcmp(sym->val.sym, "&") == 0 ) {
+        if ( strcmp(sym->val.strval, "&") == 0 ) {
             /* Variable argument case with '&' */
             if ( formals->val.l.count != 1 ) {
                 lval_del(v);
@@ -586,7 +572,7 @@ lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
     lval_del(v);
 
     if ( formals->val.l.count > 0 &&
-        strcmp(formals->val.l.cells[0]->val.sym, "&") == 0 ) {
+        strcmp(formals->val.l.cells[0]->val.strval, "&") == 0 ) {
         /* only first non-variable arguments was applied; create a empty qexpr  */
 
         if ( formals->val.l.count != 2 ) {

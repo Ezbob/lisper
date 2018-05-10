@@ -41,9 +41,7 @@ struct lval_t {
     union val {
         double floatval;
         long long intval;
-        char *err;
-        char *sym;
-        char *str;
+        char *strval;
         lcells_t l;
         lbuiltin builtin;
         lfunc_t *fun;
