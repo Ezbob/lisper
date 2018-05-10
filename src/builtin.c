@@ -5,8 +5,10 @@
 #include "lval.h"
 #include "lenv.h"
 
+#define LGETCELL(v, celln) v->val.l.cells[celln]
 
 #define UNUSED(x) (void)(x)
+
 #define LIS_NUM(type) (type == LVAL_INT || type == LVAL_FLOAT)
 
 #define LASSERT(args, cond, fmt, ...) \
@@ -228,7 +230,7 @@ lval_t *builtin_show(lenv_t *e, lval_t *v) {
     LNUM_ARGS(v, "show", 1);
     LARG_TYPE(v, "show", 0, LVAL_STR);
 
-    puts(v->val.l.cells[0]->val.strval);
+    puts(LGETCELL(v, 0)->val.strval);
 
     lval_del(v);
     return lval_sexpr();
@@ -240,7 +242,7 @@ lval_t *builtin_print(lenv_t *e, lval_t *v) {
     UNUSED(e);
 
     for ( size_t i = 0; i < v->val.l.count; ++i ) {
-        lval_print(v->val.l.cells[i]);
+        lval_print(LGETCELL(v, i));
         putchar(' ');
     }
 
@@ -294,7 +296,7 @@ lval_t *builtin_close(lenv_t *e, lval_t *v) {
     LNUM_ARGS(v, "close", 1);
     LARG_TYPE(v, "close", 0, LVAL_FILE);
 
-    lval_t *f = v->val.l.cells[0];
+    lval_t *f = LGETCELL(v, 0);
 
     if ( fclose(f->val.file->fp) != 0 ) {
         lval_del(v);
@@ -310,7 +312,7 @@ lval_t *builtin_flush(lenv_t *e, lval_t *v) {
     LNUM_ARGS(v, "flush", 1);
     LARG_TYPE(v, "flush", 0, LVAL_FILE);
 
-    lval_t *f = v->val.l.cells[0];
+    lval_t *f = LGETCELL(v, 0);
 
     if ( fflush(f->val.file->fp) != 0 ) {
         lval_del(v);
@@ -318,6 +320,56 @@ lval_t *builtin_flush(lenv_t *e, lval_t *v) {
     }
 
     lval_del(v);
+    return lval_sexpr();
+}
+
+lval_t *builtin_putstr(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LNUM_ARGS(v, "putstr", 2);
+    LARG_TYPE(v, "putstr", 0, LVAL_FILE);
+    LARG_TYPE(v, "putstr", 1, LVAL_STR);
+
+    lval_t *f = LGETCELL(v, 0);
+    lval_t *str = LGETCELL(v, 1);
+
+    if ( fputs(str->val.strval, f->val.file->fp) == EOF ) {
+        lval_del(v);
+        return lval_err("Could write '%s' to file", str->val.strval);
+    }
+
+    return lval_sexpr();
+}
+
+lval_t *builtin_getstr(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LNUM_ARGS(v, "putstr", 1);
+    LARG_TYPE(v, "putstr", 0, LVAL_FILE);
+
+    lval_t *f = LGETCELL(v, 0);
+
+    char *s = calloc(16384, sizeof(char));
+
+    if ( fgets(s, 16384 * sizeof(char), f->val.file->fp) == NULL ) {
+        lval_del(v);
+        return lval_err("Could not get string from file");
+    }
+
+    char *resized = realloc(s, strlen(s) + 1);
+    if ( resized == NULL ) {
+        lval_del(v);
+        return lval_err("Could not get string from file");
+    }
+
+    return lval_str(resized);
+}
+
+lval_t *builtin_rewind(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LNUM_ARGS(v, "rewind", 1);
+    LARG_TYPE(v, "rewind", 0, LVAL_FILE);
+
+    rewind(LGETCELL(v, 0)->val.file->fp);
+
     return lval_sexpr();
 }
 
@@ -784,6 +836,9 @@ void register_builtins(lenv_t *e) {
     LENV_BUILTIN(open);
     LENV_BUILTIN(close);
     LENV_BUILTIN(flush);
+    LENV_BUILTIN(putstr);
+    LENV_BUILTIN(rewind);
+    LENV_BUILTIN(getstr);
 
     LENV_SYMBUILTIN("+", add);
     LENV_SYMBUILTIN("-", sub);

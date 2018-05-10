@@ -146,7 +146,7 @@ void lval_del(lval_t *val) {
 void lfile_del(lfile_t *f) {
     lval_del(f->path);
     lval_del(f->mode);
-    fclose(f->fp);
+
     free(f);
 }
 
@@ -459,7 +459,7 @@ lval_t *lval_copy(lval_t *v) {
         case LVAL_FILE:
             p = lval_copy(v->val.file->path);
             m = lval_copy(v->val.file->mode);
-            fp = fopen(p->val.strval, m->val.strval);
+            fp = v->val.file->fp; /* copy share fp to limit fp use to the same file */
             x->val.file = lfile_new(p, m, fp);
             break;
      }
