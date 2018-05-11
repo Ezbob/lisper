@@ -2,13 +2,12 @@
 #define LISPER_LENV
 
 #include "lval.h"
+#include "hashmap.h"
 #include <stdlib.h>
 
 struct lenv_t {
     struct lenv_t *parent;
-    size_t count;
-    char** syms;
-    lval_t** vals;
+    HM_HASHMAP *map;
 };
 
 lenv_t *lenv_new(void);
