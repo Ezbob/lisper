@@ -144,4 +144,15 @@
     }
 })
 
+; Assert statement
+(fun {assert cond} {
+    if ( not cond ) {
+        do (
+            ( show "Error: Assertion failed. Exiting." )
+            ( exit 1 )
+        )
+    } {
+        ()
+    }
+})
 
