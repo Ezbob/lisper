@@ -80,7 +80,9 @@ lval_t *lenv_get(lenv_t *e, lval_t *k) {
 
 void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
     size_t i = lenv_hash(e->capacity, k->val.strval);
-    e->entries[i] = lval_copy(v);
+    if ( e->entries[i] == NULL ) {
+        e->entries[i] = lval_copy(v);
+    }
 }
 
 void lenv_def(lenv_t *e, lval_t *k, lval_t *v) {

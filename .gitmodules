@@ -1,0 +1,3 @@
+[submodule "redblacktree"]
+	path = redblacktree
+	url = https://github.com/Ezbob/redblacktree
