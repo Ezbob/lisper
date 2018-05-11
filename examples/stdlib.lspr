@@ -1,0 +1,147 @@
+; Nil nothing list
+(def {nil} {})
+
+; alternative logic operators
+(def {and} &&)
+(def {or} ||)
+(def {not} !)
+
+; Unpack list for function
+(fun {unpack f l} {
+    eval (join (list f) l)
+})
+
+; Pack list for function
+(fun {pack f & xs} {f xs})
+
+(def {curry} unpack)
+(def {uncurry} pack)
+
+; Do stuff in order
+(fun {do & l} {
+    if (== l nil) {nil} {last l}
+})
+
+; Create local scope by using a lambda
+(fun {let b} {
+    ((\ {_} b) ())
+})
+
+; Flip arguments to a function
+(fun {flip f a b} {f b a})
+
+; Compose functions
+(fun {comp f g x} {f (g x)})
+
+; Member of lists
+(fun {fst l} {eval (head l) })
+(fun {snd l} {eval (head (tail l)) })
+(fun {trd l} {eval (head (tail (tail l))) })
+
+; Nth element of a list
+(fun {nth n l} {
+    if (== n 0)
+        {fst l}
+        {nth (- n 1) (tail l)}
+})
+
+; last element of a list
+(fun {last l} {nth (- (len l) 1) l})
+
+; Take n items of a list
+(fun {take n l} {
+    if (== n 0) {
+        nil
+    } {
+        join (head l) (take (- n 1) (tail l))
+    }
+})
+
+; Drop n items from a list
+(fun {drop n l} {
+    if (== n 0) {
+        l
+    } {
+        drop (- n 1) (tail l)
+    }
+})
+
+; Split list at n index
+(fun {split n l} {
+    list (take n l) (drop n l)
+})
+
+; Is a element of list
+(fun {elem x l} {
+    if (== l nil) {
+        false
+    } {
+        if (== x (fst l)) {
+            true
+        } {
+            elem x (tail l)
+        }
+    }
+})
+
+; Map a function to a list
+(fun {map f l} {
+    if (== l nil) {
+        nil
+    } {
+        join (list (f (fst l))) (map f (tail l))
+    }
+})
+
+; Filter a list with respect to some boolean function
+(fun {filter f l} {
+    if (== l nil) {
+
+    } {
+        join (if (f (fst l)) {head l} {nil}) (filter f (tail l))
+    }
+})
+
+; Fold left
+(fun {foldl f z l} {
+    if (== l nil) {
+        z
+    } {
+        foldl f (f z (fst l)) (tail l)
+    }
+})
+
+(fun {sum l} {foldl + 0 l})
+(fun {product l} {foldl * 1 l})
+
+; Select a element from a list of two-element lists, where the first is the condition 
+; and the second is the element that gets selected
+(fun {select & cs} {
+    if (== cs nil) {
+        error "No selection found"
+    } {
+        if (fst (fst(cs))) {
+            snd (fst cs)
+        } {
+            curry select (tail cs)
+        }
+    }
+})
+
+; A default case syntax sugar 
+(def {otherwise} true)
+
+; Case selection. Like select but using equality
+(fun {case x & cs} {
+    if (== cs nil) {
+        error "No case(s) found"
+    } {
+        if (== x (fst (fst cs))) {
+            snd (fst cs)
+        } {
+            curry case (join (list x) (tail cs))
+        }
+    }
+})
+
+
