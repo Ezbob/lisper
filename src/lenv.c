@@ -147,7 +147,13 @@ void lenv_pretty_print(lenv_t *e) {
     printf("DEBUG -- lenv content:\n");
     for ( size_t i = 0; i < e->capacity; ++i ) {
         if ( e->entries[i]->envval != NULL && e->entries[i]->name != NULL ) {
-            printf("    n: %s t: %s p: %p\n", e->entries[i]->name, ltype_name(e->entries[i]->envval->type), (void *) (e->entries[i]->envval));
+            printf("    (n: '%s' t: '%s' p: %p)", e->entries[i]->name, ltype_name(e->entries[i]->envval->type), (void *) (e->entries[i]->envval));
+            lenv_entry_t *iter = e->entries[i]->next;
+            while ( iter != NULL ) {
+                printf(" -> (n: '%s' t: '%s' p: %p)", iter->name, ltype_name(iter->envval->type), (void *) iter->envval);
+                iter = iter->next;
+            }
+            printf("\n");
         }
     }
     printf("DEBUG -- lenv END\n");
