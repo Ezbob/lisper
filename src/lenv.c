@@ -3,38 +3,53 @@
 #include <string.h>
 #include "builtin.h"
 #include "lval.h"
-#include "hashmap.h"
 
+size_t lenv_hash( size_t capacity, char *k ) {
+    size_t i;
+    size_t res = 0;
+    size_t k_size = strlen(k);
 
-lenv_t *lenv_new(void) {
-    lenv_t *env = malloc(sizeof(lenv_t));
-    env->parent = NULL;
-    env->map = HM_initialize_hashmap(500);
-    return env;
+    for ( i = 0; i < k_size; ++i ) {
+        res += k[i];
+        if ( i < k_size - 1 ) {
+            res <<= 1;
+        }
+    }
+
+    return res % capacity;
 }
 
-lenv_t *lenv_new_nomap(void) {
+lenv_t *lenv_new(size_t capacity) {
     lenv_t *env = malloc(sizeof(lenv_t));
     env->parent = NULL;
-    env->map = NULL;
+    env->entries = malloc(capacity * sizeof(lval_t *));
+    env->capacity = capacity;
+    for (size_t i = 0; i < capacity; ++i) {
+        env->entries[i] = NULL;
+    }
     return env;
 }
 
 void lenv_del(lenv_t *env) {
     env->parent = NULL;
-    for ( size_t i = 0; i < env->count; ++i ) {
-        free(env->syms[i]);
-        lval_del(env->vals[i]);
+    for ( size_t i = 0; i < env->capacity; ++i ) {
+        if ( env->entries[i] != NULL ) {
+            lval_del(env->entries[i]);
+        }
     }
-    free(env->syms);
-    free(env->vals);
+    free(env->entries);
     free(env);
 }
 
 lenv_t *lenv_copy(lenv_t *env) {
-    lenv_t *new = lenv_new_nomap();
+    lenv_t *new = lenv_new(env->capacity);
     new->parent = env->parent;
-    new->map = HM_copyHashmap(env->map);
+    for (size_t i = 0; i < env->capacity; ++i ) {
+        if ( env->entries[i] != NULL ) {
+            new->entries[i] = lval_copy(env->entries[i]);
+        }
+    }
+
     return new;
 }
 
@@ -50,11 +65,12 @@ void lenv_add_builtin(lenv_t *e, char *name, lbuiltin func) {
 
 lval_t *lenv_get(lenv_t *e, lval_t *k) {
 
-    HM_VALUE *val = HM_getValue(e->map, k->val.strval);
+    size_t i = lenv_hash(e->capacity, k->val.strval);
+    lval_t *val = e->entries[i];
 
     if ( val != NULL ) {
         /* found */
-        return lval_copy((lval_t *) val->value);
+        return lval_copy(val);
     } else if ( e->parent != NULL ) {
         return lenv_get(e->parent, k);
     }
@@ -63,7 +79,8 @@ lval_t *lenv_get(lenv_t *e, lval_t *k) {
 }
 
 void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
-    HM_putValue(e->map, k->val.strval, v);
+    size_t i = lenv_hash(e->capacity, k->val.strval);
+    e->entries[i] = lval_copy(v);
 }
 
 void lenv_def(lenv_t *e, lval_t *k, lval_t *v) {
@@ -76,9 +93,11 @@ void lenv_def(lenv_t *e, lval_t *k, lval_t *v) {
 
 void lenv_pretty_print(lenv_t *e) {
     printf("DEBUG -- lenv content:\n");
-    /* TODO pretty print of map? */
-    /*for ( size_t i = 0; i < e->count; ++i ) {
-        printf("    n: %s t: %s p: %p\n", e->syms[i], ltype_name(e->vals[i]->type), (void *) (e->vals + i));
-    }*/
+    for ( size_t i = 0; i < e->capacity; ++i ) {
+        if ( e->entries[i] != NULL ) {
+            printf("    n: %lu t: %s p: %p\n", i, ltype_name(e->entries[i]->type), (void *) (e->entries + i));
+        }
+    }
     printf("DEBUG -- lenv END\n");
 }
+

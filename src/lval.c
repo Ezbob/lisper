@@ -5,6 +5,8 @@
 #include <string.h>
 #include <math.h>
 
+extern size_t hash_size;
+
 lval_t *builtin_list(lenv_t *, lval_t *);
 lval_t *builtin_eval(lenv_t *, lval_t *);
 
@@ -101,7 +103,7 @@ lfile_t *lfile_new(lval_t *path, lval_t *mode, FILE *fp) {
 lval_t *lval_lambda(lval_t *formals, lval_t *body) {
     lval_t *nw = malloc(sizeof(lval_t));
     nw->type = LVAL_LAMBDA;
-    nw->val.fun = lfunc_new(lenv_new(), formals, body);
+    nw->val.fun = lfunc_new(lenv_new(hash_size), formals, body);
     return nw;
 }
 

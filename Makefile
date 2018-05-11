@@ -5,7 +5,7 @@ LDLIBS=-ledit -lm
 VPATH=src/
 OBJPATH=obj/
 
-SRCS=grammar.c builtin.c exec.c mpc.c lisper.c lval.c lenv.c hashmap.c
+SRCS=grammar.c builtin.c exec.c mpc.c lisper.c lval.c lenv.c
 OBJS=$(SRCS:%.c=${OBJPATH}%.o)
 HDRS=$(wildcard ${VPATH}*.h)
 TARGET?=lisper

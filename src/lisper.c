@@ -9,6 +9,7 @@
 
 grammar_elems elems; /* grammar elems can be reused */
 lenv_t *env = NULL; /* Global environment */
+const size_t hash_size = 500;
 
 void signal_handler(int signum) {
     /* clean-up has to handled by SIGINT handler since we have while (1) */
@@ -26,7 +27,7 @@ void exit_handler(void) {
 }
 
 int main(int argc, char **argv) {
-    env = lenv_new();
+    env = lenv_new(hash_size);
     register_builtins(env);
 
     grammar_elems_init(&elems);
