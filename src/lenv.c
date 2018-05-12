@@ -62,7 +62,7 @@ lenv_t *lenv_new(size_t capacity) {
     env->entries = malloc(capacity * sizeof(lenv_entry_t *));
     env->capacity = capacity;
     for (size_t i = 0; i < capacity; ++i) {
-        env->entries[i] = lenv_entry_new();
+        env->entries[i] = NULL;
     }
     return env;
 }
@@ -70,7 +70,9 @@ lenv_t *lenv_new(size_t capacity) {
 void lenv_del(lenv_t *env) {
     env->parent = NULL;
     for ( size_t i = 0; i < env->capacity; ++i ) {
-        lenv_entry_del(env->entries[i]);
+        if ( env->entries[i] != NULL ) {
+            lenv_entry_del(env->entries[i]);
+        }
     }
     free(env->entries);
     free(env);
@@ -80,7 +82,9 @@ lenv_t *lenv_copy(lenv_t *env) {
     lenv_t *new = lenv_new(env->capacity);
     new->parent = env->parent;
     for ( size_t i = 0; i < env->capacity; ++i ) {
-        new->entries[i] = lenv_entry_copy(env->entries[i]);
+        if ( env->entries[i] != NULL ) {
+            new->entries[i] = lenv_entry_copy(env->entries[i]);
+        }
     }
 
     return new;
@@ -101,7 +105,7 @@ lval_t *lenv_get(lenv_t *e, lval_t *k) {
     size_t i = lenv_hash(e->capacity, k->val.strval);
     lenv_entry_t *entry = e->entries[i];
 
-    if ( entry->name != NULL && entry->envval != NULL ) {
+    if ( entry != NULL ) {
         if ( strcmp(entry->name, k->val.strval) == 0 ) {
             /* found */
             return lval_copy(entry->envval);
@@ -123,11 +127,13 @@ lval_t *lenv_get(lenv_t *e, lval_t *k) {
 void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
     size_t i = lenv_hash(e->capacity, k->val.strval);
     lenv_entry_t *entry = e->entries[i];
-    if ( entry->name == NULL && entry->envval == NULL ) {
+    if ( entry == NULL ) {
         /* chain is empty */
-        e->entries[i]->envval = lval_copy(v);
-        e->entries[i]->name = calloc(strlen(k->val.strval) + 1, sizeof(char));
-        strcpy(e->entries[i]->name, k->val.strval);
+        entry = lenv_entry_new();
+        entry->envval = lval_copy(v);
+        entry->name = calloc(strlen(k->val.strval) + 1, sizeof(char));
+        strcpy(entry->name, k->val.strval);
+        e->entries[i] = entry;
     } else {
         /* chain is non-empty */
         lenv_entry_t *iter = entry;
@@ -165,7 +171,7 @@ void lenv_def(lenv_t *e, lval_t *k, lval_t *v) {
 void lenv_pretty_print(lenv_t *e) {
     printf("DEBUG -- lenv content:\n");
     for ( size_t i = 0; i < e->capacity; ++i ) {
-        if ( e->entries[i]->envval != NULL && e->entries[i]->name != NULL ) {
+        if ( e->entries[i] != NULL ) {
             printf("i: %lu    (n: '%s' t: '%s' p: %p)", i, e->entries[i]->name, ltype_name(e->entries[i]->envval->type), (void *) (e->entries[i]->envval));
             lenv_entry_t *iter = e->entries[i]->next;
             while ( iter != NULL ) {
