@@ -123,12 +123,28 @@ lval_t *lenv_get(lenv_t *e, lval_t *k) {
 void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
     size_t i = lenv_hash(e->capacity, k->val.strval);
     lenv_entry_t *entry = e->entries[i];
-    if ( entry->name == NULL && entry->envval == NULL ) { /* head */
+    if ( entry->name == NULL && entry->envval == NULL ) {
+        /* chain is empty */
         e->entries[i]->envval = lval_copy(v);
         e->entries[i]->name = calloc(strlen(k->val.strval) + 1, sizeof(char));
         strcpy(e->entries[i]->name, k->val.strval);
     } else {
-        lenv_entry_t *old = e->entries[i];
+        /* chain is non-empty */
+        lenv_entry_t *iter = entry;
+
+        while ( iter != NULL ) {
+            if ( strcmp(iter->name, k->val.strval) == 0 ) {
+                /* match in the chain --> override sematics */
+                lval_del(iter->envval);
+                iter->envval = lval_copy(v);
+                return;
+            }
+            iter = iter->next;
+        }
+
+        /* not found in chain --> offer to front */
+
+        lenv_entry_t *old = entry;
         lenv_entry_t *new = lenv_entry_new();
         new->envval = lval_copy(v);
         new->name = calloc(strlen(k->val.strval) + 1, sizeof(char));
