@@ -31,6 +31,9 @@
 
 extern grammar_elems elems;
 
+const size_t lambda_cap = 100;
+const size_t fun_cap = 200;
+
 /* * math builtins * */
 
 lval_t *builtin_op(lenv_t *e, lval_t *v, char *sym) {
@@ -595,7 +598,7 @@ lval_t *builtin_lambda(lenv_t *e, lval_t *v) {
     body = lval_pop(v, 0);
     lval_del(v);
 
-    return lval_lambda(formals, body);
+    return lval_lambda(formals, body, lambda_cap);
 }
 
 lval_t *builtin_fun(lenv_t *e, lval_t*v) {
@@ -619,7 +622,7 @@ lval_t *builtin_fun(lenv_t *e, lval_t*v) {
     lval_t *name = lval_pop(formals, 0);
 
     body = lval_pop(v, 0);
-    lval_t *fun = lval_lambda(formals, body);
+    lval_t *fun = lval_lambda(formals, body, fun_cap);
 
     lenv_put(e, name, fun);
     lval_del(fun);

@@ -44,9 +44,11 @@ void lenv_entry_del(lenv_entry_t *e) {
 lenv_entry_t *lenv_entry_copy(lenv_entry_t *e) {
     lenv_entry_t *x = lenv_entry_new();
 
-    x->name = calloc(strlen(e->name) + 1, sizeof(char));
-    strcpy(x->name, e->name);
-    x->envval = lval_copy(e->envval);
+    if ( !(e->name == NULL || e->envval == NULL) ) {
+        x->name = calloc(strlen(e->name) + 1, sizeof(char));
+        strcpy(x->name, e->name);
+        x->envval = lval_copy(e->envval);
+    }
 
     if ( e->next != NULL ) {
         x->next = lenv_entry_copy(e->next);
@@ -77,7 +79,7 @@ void lenv_del(lenv_t *env) {
 lenv_t *lenv_copy(lenv_t *env) {
     lenv_t *new = lenv_new(env->capacity);
     new->parent = env->parent;
-    for (size_t i = 0; i < env->capacity; ++i ) {
+    for ( size_t i = 0; i < env->capacity; ++i ) {
         new->entries[i] = lenv_entry_copy(env->entries[i]);
     }
 
@@ -120,7 +122,8 @@ lval_t *lenv_get(lenv_t *e, lval_t *k) {
 
 void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
     size_t i = lenv_hash(e->capacity, k->val.strval);
-    if ( e->entries[i]->next == NULL ) { /* head */
+    lenv_entry_t *entry = e->entries[i];
+    if ( entry->name == NULL && entry->envval == NULL ) { /* head */
         e->entries[i]->envval = lval_copy(v);
         e->entries[i]->name = calloc(strlen(k->val.strval) + 1, sizeof(char));
         strcpy(e->entries[i]->name, k->val.strval);
@@ -147,10 +150,10 @@ void lenv_pretty_print(lenv_t *e) {
     printf("DEBUG -- lenv content:\n");
     for ( size_t i = 0; i < e->capacity; ++i ) {
         if ( e->entries[i]->envval != NULL && e->entries[i]->name != NULL ) {
-            printf("    (n: '%s' t: '%s' p: %p)", e->entries[i]->name, ltype_name(e->entries[i]->envval->type), (void *) (e->entries[i]->envval));
+            printf("i: %lu    (n: '%s' t: '%s' p: %p)", i, e->entries[i]->name, ltype_name(e->entries[i]->envval->type), (void *) (e->entries[i]->envval));
             lenv_entry_t *iter = e->entries[i]->next;
             while ( iter != NULL ) {
-                printf(" -> (n: '%s' t: '%s' p: %p)", iter->name, ltype_name(iter->envval->type), (void *) iter->envval);
+                printf("-o-(n: '%s' t: '%s' p: %p)", iter->name, ltype_name(iter->envval->type), (void *) iter->envval);
                 iter = iter->next;
             }
             printf("\n");

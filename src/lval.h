@@ -72,7 +72,7 @@ lval_t *lval_str(char *);
 lval_t *lval_builtin(lbuiltin);
 lval_t *lval_sexpr(void);
 lval_t *lval_qexpr(void);
-lval_t *lval_lambda(lval_t *, lval_t *);
+lval_t *lval_lambda(lval_t *, lval_t *, size_t);
 lval_t *lval_file(lval_t *, lval_t *, FILE *);
 
 /* lval transformers */
