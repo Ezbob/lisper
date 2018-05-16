@@ -138,6 +138,7 @@ void lval_del(lval_t *val) {
             for ( size_t i = 0; i < val->val.l.count; ++i ) {
                 lval_del(val->val.l.cells[i]);
             }
+            free(val->val.l.cells);
             break;
     }
     free(val);
