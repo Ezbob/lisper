@@ -12,28 +12,28 @@ lval_t *builtin_list(lenv_t *, lval_t *);
 lval_t *builtin_eval(lenv_t *, lval_t *);
 
 lval_t *lval_int(long long num) {
-    lval_t *val = malloc(sizeof(lval_t));
+    lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_INT;
     val->val.intval = num;
     return val;
 }
 
 lval_t *lval_float(double num) {
-    lval_t *val = malloc(sizeof(lval_t));
+    lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_FLOAT;
     val->val.floatval = num;
     return val;
 }
 
 lval_t *lval_bool(long long num) {
-    lval_t *val = malloc(sizeof(lval_t));
+    lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_BOOL;
     val->val.intval = num;
     return val;
 }
 
 lval_t *lval_err(char *fmt, ...) {
-    lval_t *val = malloc(sizeof(lval_t));
+    lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_ERR;
     va_list va;
     va_start(va, fmt);
@@ -47,7 +47,7 @@ lval_t *lval_err(char *fmt, ...) {
 }
 
 lval_t *lval_sym(char* sym) {
-    lval_t *val = malloc(sizeof(lval_t));
+    lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_SYM;
     val->val.strval = malloc(strlen(sym) + 1);
     strcpy(val->val.strval, sym);
@@ -55,7 +55,7 @@ lval_t *lval_sym(char* sym) {
 }
 
 lval_t *lval_sexpr(void) {
-    lval_t *val = malloc(sizeof(lval_t));
+    lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_SEXPR;
     val->val.l.count = 0;
     val->val.l.cells = NULL;
@@ -63,7 +63,7 @@ lval_t *lval_sexpr(void) {
 }
 
 lval_t *lval_qexpr(void) {
-    lval_t *val = malloc(sizeof(lval_t));
+    lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_QEXPR;
     val->val.l.count = 0;
     val->val.l.cells = NULL;
@@ -71,7 +71,7 @@ lval_t *lval_qexpr(void) {
 }
 
 lval_t *lval_str(char *s) {
-    lval_t *v = malloc(sizeof(lval_t));
+    lval_t *v = mempool_take(lval_mp);
     v->type = LVAL_STR;
     v->val.strval = malloc(strlen(s) + 1);
     strcpy(v->val.strval, s);
@@ -79,7 +79,7 @@ lval_t *lval_str(char *s) {
 }
 
 lval_t *lval_builtin(lbuiltin f) {
-    lval_t *val = malloc(sizeof(lval_t));
+    lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_BUILTIN;
     val->val.builtin = f;
     return val;
@@ -102,14 +102,14 @@ lfile_t *lfile_new(lval_t *path, lval_t *mode, FILE *fp) {
 }
 
 lval_t *lval_lambda(lval_t *formals, lval_t *body, size_t envcap) {
-    lval_t *nw = malloc(sizeof(lval_t));
+    lval_t *nw = mempool_take(lval_mp);
     nw->type = LVAL_LAMBDA;
     nw->val.fun = lfunc_new(lenv_new(envcap), formals, body);
     return nw;
 }
 
 lval_t *lval_file(lval_t *path, lval_t *mode, FILE *fp) {
-    lval_t *nw = malloc(sizeof(lval_t));
+    lval_t *nw = mempool_take(lval_mp);
     nw->type = LVAL_FILE;
     nw->val.file = lfile_new(path, mode, fp);
     return nw;
@@ -144,7 +144,7 @@ void lval_del(lval_t *val) {
             free(val->val.l.cells);
             break;
     }
-    free(val);
+    mempool_recycle(lval_mp, val);
 }
 
 void lfile_del(lfile_t *f) {
@@ -422,7 +422,7 @@ lval_t *lval_take(lval_t *v, int i) {
 
 lval_t *lval_copy(lval_t *v) {
 
-    lval_t *x = malloc(sizeof(lval_t));
+    lval_t *x = mempool_take(lval_mp);
     x->type = v->type;
     lval_t *p;
     FILE *fp;

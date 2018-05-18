@@ -31,9 +31,9 @@ void exit_handler(void) {
 }
 
 int main(int argc, char **argv) {
+    lval_mp = mempool_init(sizeof(lval_t), 10000);
     env = lenv_new(hash_size);
     register_builtins(env);
-    lval_mp = mempool_init(sizeof(lval_t), 10000);
 
     grammar_elems_init(&elems);
     grammar_make_lang(&elems);
