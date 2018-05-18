@@ -1,9 +1,12 @@
 #include "lval.h"
 #include "lenv.h"
+#include "mempool.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
+extern struct mempool *lval_mp;
 
 lval_t *builtin_list(lenv_t *, lval_t *);
 lval_t *builtin_eval(lenv_t *, lval_t *);
