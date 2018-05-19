@@ -56,6 +56,10 @@ void exec_repl(lenv_t *env, grammar_elems elems) {
 #endif
     while ( 1 ) {
         input = readline("lisper>>> ");
+        if (input == NULL) {
+            putchar('\n');
+            continue;
+        }
 
         add_history(input);
 
