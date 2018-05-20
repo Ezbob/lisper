@@ -9,25 +9,29 @@
  * the maximum number of such items that the pool is enable to supply
  * any consumers with.
  */
-struct mempool *mempool_init(size_t itemsize, size_t cap) {
+struct mempool *mempool_init(size_t itemsize, size_t poolsize) {
     struct mempool *mp = malloc(sizeof(struct mempool));
+    if ( mp == NULL ) {
+        return NULL;
+    }
+    size_t blocksize = itemsize + sizeof(char *);
+    mp->capacity = poolsize * blocksize;
     mp->itemsize = itemsize;
-    mp->capacity = cap;
-    mp->memspace = malloc(cap * (itemsize + sizeof(struct freelist)));
+    mp->memspace = malloc(mp->capacity);
     if ( mp->memspace == NULL ) {
         return NULL;
     }
-    size_t blocksize = itemsize + sizeof(struct freelist);
+    mp->next = NULL;
+    mp->free = (char **) (mp->memspace);
+    mp->takencount = 0;
 
-    mp->free = (struct freelist *) mp->memspace;
-
-    struct freelist *iter = mp->free;
-    for ( size_t i = 1; i < cap; ++i ) {
-        iter->next = (void *) (mp->memspace + i * blocksize);
-        iter = iter->next;
+    char **iter = mp->free;
+    for ( size_t i = 1; i < poolsize; ++i ) {
+        void *next = (mp->memspace + i * blocksize);
+        *iter = next; // make current free pointer point to start of next block
+        iter = (char **) next; // advance to next free pointer
     }
-    iter->next = NULL;
-    mp->freesize = cap;
+    *iter = NULL;
 
     return mp;
 }
@@ -38,8 +42,13 @@ struct mempool *mempool_init(size_t itemsize, size_t cap) {
  * the heap memory allocate to represent the memory pool.
  */
 void mempool_del(struct mempool *mp) {
-    free(mp->memspace);
-    free(mp);
+    struct mempool *iter = mp;
+    while ( iter != NULL ) {
+        struct mempool *next = iter->next;
+        free(iter->memspace);
+        free(iter);
+        iter = next;
+    }
 }
 
 /*
@@ -47,14 +56,35 @@ void mempool_del(struct mempool *mp) {
  */
 void *mempool_take(struct mempool *mp) {
     if ( mp->free != NULL ) {
-        struct freelist *fl = mp->free;
-        void *res = (void *) (fl + 1); // actual memory is next to free struct
-        mp->free = fl->next;
-        mp->freesize--;
+        freelist_t head = mp->free;
+        void *res = (void *) (head + 1); // actual memory is next to free pointer
+        mp->takencount++;
+        mp->free = (void *) *head;
         return res;
-    } else {
-        return NULL;
     }
+
+    struct mempool *iter = mp;
+    while ( iter->next != NULL && iter->free == NULL ) { // search chain of pools
+        iter = iter->next;
+    }
+
+    if ( iter->next == NULL && iter->free == NULL ) { // every pool on the chain is full
+        iter->next = mempool_init(mp->itemsize, mp->takencount);
+        iter = iter->next;
+    }
+
+    freelist_t head = iter->free;
+    void *res = (void *) (head + 1);
+    iter->takencount++;
+    iter->free = (void *) *head;
+    return res;
+}
+
+/*
+ * Check if memory is in pool
+ */
+int mempool_hasaddr(struct mempool *mp, void *mem) {
+    return mp->memspace <= ((char *) mem) && (mp->memspace + mp->capacity) > ((char *) mem);
 }
 
 /*
@@ -62,13 +92,17 @@ void *mempool_take(struct mempool *mp) {
  * by putting it on the freelist.
  */
 int mempool_recycle(struct mempool *mp, void *mem) {
-    struct freelist *memspace = mem;
-    struct freelist *header = (memspace - 1);
-        /* because we have casted memspace to freelist we offset by one freelist pointer */
-    struct freelist *next = mp->free;
-    header->next = next;
-    mp->free = header;
-    mp->freesize++;
+    struct mempool *iter = mp;
+    while ( iter != NULL && !mempool_hasaddr(iter, mem) ) {
+        iter = iter->next;
+    }
+    if ( iter ) {
+        freelist_t header = ( (freelist_t) mem ) - 1; // next free pointer is to the left of the data
+        *header = (void *) iter->free;
+        iter->takencount--;
+        iter->free = header;
+        return 0;
+    }
     return 1;
 }
 
