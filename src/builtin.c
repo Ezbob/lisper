@@ -568,7 +568,6 @@ lval_t *builtin_exit(lenv_t *e, lval_t *v) {
 
     int exit_code = (int) (v->val.l.cells[0]->val.intval);
     lval_del(v);
-    lenv_del(e);
     exit(exit_code);
 
     return lval_sexpr();

@@ -68,6 +68,9 @@ lenv_t *lenv_new(size_t capacity) {
 }
 
 void lenv_del(lenv_t *env) {
+    if ( env == NULL ) {
+        return;
+    }
     env->parent = NULL;
     for ( size_t i = 0; i < env->capacity; ++i ) {
         if ( env->entries[i] != NULL ) {
