@@ -154,6 +154,8 @@ lval_t *builtin_op(lenv_t *e, lval_t *v, char *sym) {
     return a;
 }
 
+/* math operators */
+
 lval_t *builtin_add(lenv_t *e, lval_t *a) {
     return builtin_op(e, a, "+");
 }
@@ -188,12 +190,19 @@ lval_t *builtin_max(lenv_t *e, lval_t *a) {
 
 /* * q-expression specific builtins * */
 
+/**
+ * Convert expression into a q-expression
+ */
 lval_t *builtin_list(lenv_t *e, lval_t *v) {
     UNUSED(e);
     v->type = LVAL_QEXPR;
     return v;
 }
 
+/**
+ * Take one q-expression and evaluate it
+ * as a s-expression.
+ */
 lval_t *builtin_eval(lenv_t *e, lval_t *v) {
     LNUM_ARGS(v, "eval", 1);
     LARG_TYPE(v, "eval", 0, LVAL_QEXPR);
@@ -203,13 +212,17 @@ lval_t *builtin_eval(lenv_t *e, lval_t *v) {
     return lval_eval(e, a);
 }
 
+/**
+ * Read a string and try and parse into a
+ * lval
+ */
 lval_t *builtin_read(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LNUM_ARGS(v, "read", 1);
     LARG_TYPE(v, "read", 0, LVAL_STR);
 
     mpc_result_t r;
-    if ( mpc_parse("input", v->val.l.cells[0]->val.strval, elems.Lisper, &r) ) {
+    if ( mpc_parse("input", LGETCELL(v, 0)->val.strval, elems.Lisper, &r) ) {
         lval_t *expr = lval_read(r.output);
         mpc_ast_delete(r.output);
 
@@ -228,6 +241,9 @@ lval_t *builtin_read(lenv_t *e, lval_t *v) {
     return err;
 }
 
+/**
+ * Print the contents of a string
+ */
 lval_t *builtin_show(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LNUM_ARGS(v, "show", 1);
@@ -241,6 +257,9 @@ lval_t *builtin_show(lenv_t *e, lval_t *v) {
 
 /* * IO builtins * */
 
+/**
+ * Print a series of lvals
+ */
 lval_t *builtin_print(lenv_t *e, lval_t *v) {
     UNUSED(e);
 
@@ -255,6 +274,15 @@ lval_t *builtin_print(lenv_t *e, lval_t *v) {
     return lval_sexpr();
 }
 
+/**
+ * Open a file in one of the following modes:
+ * - "r": read-only mode
+ * - "r+": read and write mode (on pre-existing file)
+ * - "w": write-only mode that overrides existing files
+ * - "a": append mode
+ * - "w+": read and write mode that overrides existing files
+ * - "a+": read and write mode that appends to existing files
+ */
 lval_t *builtin_open(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LNUM_ARGS(v, "open", 2);
@@ -294,6 +322,9 @@ lval_t *builtin_open(lenv_t *e, lval_t *v) {
     return lval_file(filename, mode, fp);
 }
 
+/**
+ * Closes an open file
+ */
 lval_t *builtin_close(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LNUM_ARGS(v, "close", 1);
