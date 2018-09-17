@@ -4,12 +4,14 @@
 #include <stdlib.h>
 
 struct mempool {
-    char *memspace;
-    freelist_t free;
-    size_t itemsize;
-    size_t capacity;
-    size_t takencount;
-    struct mempool *next;
+    char *memspace; /* pointer to byte-sized array that contains all the blocks */
+    char **free; /* free list pointer. Points either to the next free block
+        or null if no more blocks are free*/
+    size_t itemsize; /* byte size of the indiviual types contained in a block */
+    size_t capacity; /* byte capacity of the mempool */
+    size_t takencount; /* how many blocks has been taken */
+    struct mempool *next; /* next mempool pointer allows for
+        allocation of more mempools when the capacity has been reached */
 };
 
 struct mempool *mempool_init(size_t itemsize, size_t capacity);
