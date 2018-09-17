@@ -1,6 +1,6 @@
 CC=gcc
 SYMBOLS?=_ARCHLINUX # Arch linux symbol; replace with empty definition to compile for other linux / macOS
-CFLAGS=-std=c99 $(addprefix -D , ${SYMBOLS}) -Wall -Wextra -pedantic
+CFLAGS=-std=c18 $(addprefix -D , ${SYMBOLS}) -Wall -Wextra -pedantic
 LDLIBS=-ledit -lm
 VPATH=src/
 OBJPATH=obj/
