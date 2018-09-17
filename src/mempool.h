@@ -3,8 +3,6 @@
 
 #include <stdlib.h>
 
-typedef char** freelist_t;
-
 struct mempool {
     char *memspace;
     freelist_t free;

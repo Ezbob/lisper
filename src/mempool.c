@@ -56,7 +56,7 @@ void mempool_del(struct mempool *mp) {
  */
 void *mempool_take(struct mempool *mp) {
     if ( mp->free != NULL ) {
-        freelist_t head = mp->free;
+        char **head = mp->free;
         void *res = (void *) (head + 1); // actual memory is next to free pointer
         mp->takencount++;
         mp->free = (void *) *head;
@@ -73,7 +73,7 @@ void *mempool_take(struct mempool *mp) {
         iter = iter->next;
     }
 
-    freelist_t head = iter->free;
+    char **head = iter->free;
     void *res = (void *) (head + 1);
     iter->takencount++;
     iter->free = (void *) *head;
@@ -97,7 +97,7 @@ int mempool_recycle(struct mempool *mp, void *mem) {
         iter = iter->next;
     }
     if ( iter ) {
-        freelist_t header = ( (freelist_t) mem ) - 1; // next free pointer is to the left of the data
+        char **header = ( (char **) mem ) - 1; // next free pointer is to the left of the data
         *header = (void *) iter->free;
         iter->takencount--;
         iter->free = header;
