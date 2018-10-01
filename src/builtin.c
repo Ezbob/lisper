@@ -31,6 +31,7 @@
 
 extern grammar_elems elems;
 
+/* env preallocated sizes */
 const size_t lambda_cap = 100;
 const size_t fun_cap = 200;
 
@@ -317,6 +318,11 @@ lval_t *builtin_open(lenv_t *e, lval_t *v) {
     }
 
     fp = fopen(path, m);
+
+    if ( fp == NULL ) {
+        lval_del(v);
+        return lval_err("Could not open file '%s'. %s", path, strerror(errno));
+    }
 
     lval_del(v);
     return lval_file(filename, mode, fp);

@@ -161,15 +161,16 @@ void lfunc_del(lfunc_t *f) {
     free(f);
 }
 
-void lval_expr_print(lval_t *val, char prefix, char suffix) {
+void lval_expr_print(lval_t *val, char prefix, char suffix, char delimiter) {
     putchar(prefix);
-    
-    for ( size_t i = 0; i < val->val.l.count; i++ ) {
-        lval_print(val->val.l.cells[i]);
 
-        if ( i != ( val->val.l.count - 1 ) ) {
-            putchar(' ');
-        }
+    size_t len = val->val.l.count;
+
+    if ( len > 0 ) lval_print(val->val.l.cells[0]);
+
+    for ( size_t i = 1; i < len; i++ ) {
+        putchar(delimiter);
+        lval_print(val->val.l.cells[i]);
     }
 
     putchar(suffix);
@@ -211,10 +212,10 @@ void lval_print(lval_t *val) {
             lval_print_str(val);
             break;
         case LVAL_SEXPR:
-            lval_expr_print(val, '(', ')');
+            lval_expr_print(val, '(', ')', ' ');
             break;
         case LVAL_QEXPR:
-            lval_expr_print(val, '{', '}');
+            lval_expr_print(val, '{', '}', ' ');
             break;
         case LVAL_LAMBDA:
             printf("(\\ ");
