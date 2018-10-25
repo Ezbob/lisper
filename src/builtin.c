@@ -387,7 +387,7 @@ lval_t *builtin_getstr(lenv_t *e, lval_t *v) {
 
     lval_t *f = LGETCELL(v, 0);
 
-    char *s = calloc(16384, sizeof(char));
+    char *s = calloc(16385, sizeof(char));
 
     if ( fgets(s, 16384 * sizeof(char), f->val.file->fp) == NULL ) {
         lval_del(v);
@@ -420,7 +420,7 @@ lval_t *builtin_error(lenv_t *e, lval_t *v) {
     LNUM_ARGS(v, "error", 1);
     LARG_TYPE(v, "error", 0, LVAL_STR);
 
-    lval_t *err = lval_err(v->val.l.cells[0]->val.strval);
+    lval_t *err = lval_err(LGETCELL(v, 0)->val.strval);
 
     lval_del(v);
     return err;
@@ -503,7 +503,6 @@ lval_t *builtin_join(lenv_t *e, lval_t *v) {
         lval_del(v);
         return a;
     }
-
 }
 
 lval_t *builtin_cons(lenv_t *e, lval_t *v) {
@@ -525,7 +524,7 @@ lval_t *builtin_len(lenv_t *e, lval_t *v) {
     LNUM_ARGS(v, "len", 1);
     LTWO_ARG_TYPES(v, "len", 0, LVAL_QEXPR, LVAL_STR);
 
-    lval_t *arg = v->val.l.cells[0];
+    lval_t *arg = LGETCELL(v, 0);
     size_t count = 0;
     if ( arg->type == LVAL_STR ) {
         count = strlen(arg->val.strval);
