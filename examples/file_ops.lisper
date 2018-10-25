@@ -1,0 +1,6 @@
+; Small write read example of a file
+( = {fin} (open "testfile" "w+") )
+( putstr "hello world!\n" fin )
+( rewind fin )
+( print ( getstr fin ) )
+( close fin )
