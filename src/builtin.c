@@ -366,11 +366,11 @@ lval_t *builtin_flush(lenv_t *e, lval_t *v) {
 lval_t *builtin_putstr(lenv_t *e, lval_t *v) {
     UNUSED(e);
     LNUM_ARGS(v, "putstr", 2);
-    LARG_TYPE(v, "putstr", 0, LVAL_FILE);
-    LARG_TYPE(v, "putstr", 1, LVAL_STR);
+    LARG_TYPE(v, "putstr", 0, LVAL_STR);
+    LARG_TYPE(v, "putstr", 1, LVAL_FILE);
 
-    lval_t *f = LGETCELL(v, 0);
-    lval_t *str = LGETCELL(v, 1);
+    lval_t *f = LGETCELL(v, 1);
+    lval_t *str = LGETCELL(v, 0);
 
     if ( fputs(str->val.strval, f->val.file->fp) == EOF ) {
         lval_del(v);
@@ -382,8 +382,8 @@ lval_t *builtin_putstr(lenv_t *e, lval_t *v) {
 
 lval_t *builtin_getstr(lenv_t *e, lval_t *v) {
     UNUSED(e);
-    LNUM_ARGS(v, "putstr", 1);
-    LARG_TYPE(v, "putstr", 0, LVAL_FILE);
+    LNUM_ARGS(v, "getstr", 1);
+    LARG_TYPE(v, "getstr", 0, LVAL_FILE);
 
     lval_t *f = LGETCELL(v, 0);
 
@@ -391,13 +391,13 @@ lval_t *builtin_getstr(lenv_t *e, lval_t *v) {
 
     if ( fgets(s, 16384 * sizeof(char), f->val.file->fp) == NULL ) {
         lval_del(v);
-        return lval_err("Could not get string from file");
+        return lval_err("Could not get string from file; could not read string");
     }
 
     char *resized = realloc(s, strlen(s) + 1);
     if ( resized == NULL ) {
         lval_del(v);
-        return lval_err("Could not get string from file");
+        return lval_err("Could not get string from file; could not resize string buffer");
     }
 
     return lval_str(resized);
