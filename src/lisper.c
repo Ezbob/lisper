@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
+#include "lisper.h"
 #include "grammar.h"
 #include "lenv.h"
 #include "lval.h"
@@ -13,6 +14,7 @@ lenv_t *env = NULL; /* Global environment */
 const size_t hash_size = 500;
 struct mempool *lval_mp = NULL;
 const size_t lval_mempool_size = 10000;
+struct argument_capture *args;
 
 
 void signal_handler(int signum) {
@@ -32,6 +34,13 @@ void exit_handler(void) {
 }
 
 int main(int argc, char **argv) {
+
+    struct argument_capture capture;
+    capture.argc = argc;
+    capture.argv = argv;
+
+    args = &capture;
+
     lval_mp = mempool_init(sizeof(lval_t), lval_mempool_size);
     env = lenv_new(hash_size);
     register_builtins(env);

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <math.h>
+#include "lisper.h"
 #include "builtin.h"
 #include "grammar.h"
 #include "lval.h"
@@ -13,6 +14,9 @@
 
 #define LASSERT(args, cond, fmt, ...) \
     if ( !(cond) ) { lval_t *err = lval_err(fmt, ##__VA_ARGS__); lval_del(args); return err;  }
+
+#define LNUM_LEAST_ARGS(sym, funcname, numargs) \
+    LASSERT(sym, sym->val.l.count >= numargs, "Wrong number of arguments parsed to '%s'. Expected at least %lu argument(s); got %lu. ", funcname, numargs, sym->val.l.count)
 
 #define LNUM_ARGS(sym, funcname, numargs) \
     LASSERT(sym, sym->val.l.count == numargs, "Wrong number of arguments parsed to '%s'. Expected at exactly %lu argument(s); got %lu. ", funcname, numargs, sym->val.l.count)
@@ -30,6 +34,7 @@
 #define LENV_SYMBUILTIN(sym, name) lenv_add_builtin(e, sym, builtin_##name)
 
 extern grammar_elems elems;
+extern struct argument_capture *args;
 
 /* env preallocated sizes */
 const size_t lambda_cap = 100;
@@ -257,6 +262,27 @@ lval_t *builtin_show(lenv_t *e, lval_t *v) {
 }
 
 /* * IO builtins * */
+
+/**
+ * get a list of input program arguments
+ */
+lval_t *builtin_args(lenv_t *e, lval_t *v) {
+    UNUSED(e);
+    LNUM_ARGS(v, "args", 1);
+
+    struct lval_t *res = lval_qexpr();
+    struct lval_t *arg; 
+    int argc = args->argc;
+    for (int i = 0; i < argc; ++i) {
+        char *arg_str = args->argv[i];
+        arg = lval_str(arg_str);
+        lval_add(res, arg);
+    }
+
+    lval_del(v);
+    return res;
+}
+
 
 /**
  * Print a series of lvals
@@ -865,6 +891,7 @@ void register_builtins(lenv_t *e) {
     LENV_BUILTIN(min);
     LENV_BUILTIN(fun);
     LENV_BUILTIN(if);
+    LENV_BUILTIN(args);
     LENV_BUILTIN(type);
     LENV_BUILTIN(load);
     LENV_BUILTIN(error);
