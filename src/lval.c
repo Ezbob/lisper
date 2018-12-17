@@ -728,7 +728,7 @@ lval_t *lval_eval(lenv_t *e, lval_t *v) {
     lval_t *x;
     switch ( v->type ) {
         case LVAL_SYM:
-            /* eval'ing symbols just looks up the symbol in the symbol table
+            /* Eval'ing symbols just looks up the symbol in the symbol table
                Discards the wrapping.
              */
             x = lenv_get(e, v); 

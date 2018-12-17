@@ -8,6 +8,7 @@
 #include "builtin.h"
 #include "exec.h"
 #include "mempool.h"
+#include "prgparams.h"
 
 grammar_elems elems; /* grammar elems can be reused */
 lenv_t *env = NULL; /* Global environment */
@@ -36,6 +37,8 @@ void exit_handler(void) {
 int main(int argc, char **argv) {
 
     struct argument_capture capture;
+    struct lisper_params params;
+
     capture.argc = argc;
     capture.argv = argv;
 
@@ -52,7 +55,11 @@ int main(int argc, char **argv) {
     atexit(exit_handler);
 
     if ( argc >= 2 ) {
-        exec_filein(env, argc, argv);
+        if ( parse_prg_params(argc, argv, &params) != 0 ) {
+            printf("Error dude couldn't parse arguments");
+            exit(1);
+        }
+        exec_filein(env, &params);
     } else {
         exec_repl(env, elems);
     }

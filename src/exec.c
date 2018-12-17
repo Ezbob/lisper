@@ -42,7 +42,7 @@ void goodbye_exit(void) {
 
 void exec_repl(lenv_t *env, grammar_elems elems) {
     char *input;
-    printf("lisper version %s\n", "0.1.0");
+    printf("lisper version %s\n", "0.2.0");
     printf("Anders Busch 2018\n");
     puts("Press Ctrl+c to Exit\n");
 
@@ -87,14 +87,12 @@ void exec_repl(lenv_t *env, grammar_elems elems) {
 }
 
 
-void exec_filein(lenv_t *env, int argc, char** filenames) {
-    for ( int i = 1; i < argc; ++i ) {
-        lval_t *args = lval_add(lval_sexpr(), lval_str(filenames[i]));
-        lval_t *x = builtin_load(env, args);
-        if ( x->type == LVAL_ERR ) {
-            lval_println(x);
-        }
-        lval_del(x);
+void exec_filein(lenv_t *env, struct lisper_params *params) {
+    lval_t *args = lval_add(lval_sexpr(), lval_str(params->filename));
+    lval_t *x = builtin_load(env, args);
+    if ( x->type == LVAL_ERR ) {
+        lval_println(x);
     }
+    lval_del(x);
 }
 
