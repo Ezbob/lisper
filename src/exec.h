@@ -1,5 +1,5 @@
-#ifndef LISPIT_EXEC
-#define LISPIT_EXEC
+#ifndef LISPER_EXEC
+#define LISPER_EXEC
 
 #include "lenv.h"
 #include "grammar.h"

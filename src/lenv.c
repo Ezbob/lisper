@@ -19,8 +19,8 @@ size_t lenv_hash( size_t capacity, char *k ) {
     return res % capacity;
 }
 
-lenv_entry_t *lenv_entry_new(void) {
-    lenv_entry_t *entry = malloc(sizeof(lenv_entry_t));
+struct lenv_entry_t *lenv_entry_new(void) {
+    struct lenv_entry_t *entry = malloc(sizeof(struct lenv_entry_t));
     entry->name = NULL;
     entry->envval = NULL;
     entry->next = NULL;
@@ -28,7 +28,7 @@ lenv_entry_t *lenv_entry_new(void) {
     return entry;
 }
 
-void lenv_entry_del(lenv_entry_t *e) {
+void lenv_entry_del(struct lenv_entry_t *e) {
     if ( e->envval != NULL ) {
         lval_del(e->envval);
     }
@@ -41,8 +41,8 @@ void lenv_entry_del(lenv_entry_t *e) {
     free(e);
 }
 
-lenv_entry_t *lenv_entry_copy(lenv_entry_t *e) {
-    lenv_entry_t *x = lenv_entry_new();
+struct lenv_entry_t *lenv_entry_copy(struct lenv_entry_t *e) {
+    struct lenv_entry_t *x = lenv_entry_new();
 
     if ( !(e->name == NULL || e->envval == NULL) ) {
         x->name = calloc(strlen(e->name) + 1, sizeof(char));
@@ -59,7 +59,7 @@ lenv_entry_t *lenv_entry_copy(lenv_entry_t *e) {
 lenv_t *lenv_new(size_t capacity) {
     lenv_t *env = malloc(sizeof(lenv_t));
     env->parent = NULL;
-    env->entries = malloc(capacity * sizeof(lenv_entry_t *));
+    env->entries = malloc(capacity * sizeof(struct lenv_entry_t *));
     env->capacity = capacity;
     for (size_t i = 0; i < capacity; ++i) {
         env->entries[i] = NULL;
@@ -106,17 +106,18 @@ void lenv_add_builtin(lenv_t *e, char *name, lbuiltin func) {
 lval_t *lenv_get(lenv_t *e, lval_t *k) {
 
     size_t i = lenv_hash(e->capacity, k->val.strval);
-    lenv_entry_t *entry = e->entries[i];
+    struct lenv_entry_t *entry = e->entries[i];
 
     if ( entry != NULL ) {
         if ( strcmp(entry->name, k->val.strval) == 0 ) {
             /* found */
             return lval_copy(entry->envval);
         }
-        lenv_entry_t *iter = entry->next;
+        struct lenv_entry_t *iter = entry->next;
         /* go through the linked list */
         while ( iter != NULL ) {
             if ( strcmp(iter->name, k->val.strval) == 0 ) {
+                /* found in chain */
                 return lval_copy(iter->envval);
             }
         }
@@ -129,7 +130,8 @@ lval_t *lenv_get(lenv_t *e, lval_t *k) {
 
 void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
     size_t i = lenv_hash(e->capacity, k->val.strval);
-    lenv_entry_t *entry = e->entries[i];
+
+    struct lenv_entry_t *entry = e->entries[i];
     if ( entry == NULL ) {
         /* chain is empty */
         entry = lenv_entry_new();
@@ -139,7 +141,7 @@ void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
         e->entries[i] = entry;
     } else {
         /* chain is non-empty */
-        lenv_entry_t *iter = entry;
+        struct lenv_entry_t *iter = entry;
 
         while ( iter != NULL ) {
             if ( strcmp(iter->name, k->val.strval) == 0 ) {
@@ -153,8 +155,8 @@ void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
 
         /* not found in chain --> offer to front */
 
-        lenv_entry_t *old = entry;
-        lenv_entry_t *new = lenv_entry_new();
+        struct lenv_entry_t *old = entry;
+        struct lenv_entry_t *new = lenv_entry_new();
         new->envval = lval_copy(v);
         new->name = calloc(strlen(k->val.strval) + 1, sizeof(char));
         strcpy(new->name, k->val.strval);
@@ -172,11 +174,10 @@ void lenv_def(lenv_t *e, lval_t *k, lval_t *v) {
 }
 
 void lenv_pretty_print(lenv_t *e) {
-    printf("DEBUG -- lenv content:\n");
     for ( size_t i = 0; i < e->capacity; ++i ) {
         if ( e->entries[i] != NULL ) {
             printf("i: %lu    (n: '%s' t: '%s' p: %p)", i, e->entries[i]->name, ltype_name(e->entries[i]->envval->type), (void *) (e->entries[i]->envval));
-            lenv_entry_t *iter = e->entries[i]->next;
+            struct lenv_entry_t *iter = e->entries[i]->next;
             while ( iter != NULL ) {
                 printf("-o-(n: '%s' t: '%s' p: %p)", iter->name, ltype_name(iter->envval->type), (void *) iter->envval);
                 iter = iter->next;
@@ -184,6 +185,5 @@ void lenv_pretty_print(lenv_t *e) {
             printf("\n");
         }
     }
-    printf("DEBUG -- lenv END\n");
 }
 

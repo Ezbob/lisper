@@ -66,14 +66,15 @@ void exec_repl(lenv_t *env, grammar_elems elems) {
         if ( mpc_parse("<stdin>", input, elems.Lisper, &r) ) {
             lval_t *read = lval_read(r.output);
 #ifdef _DEBUG
+            printf("Parsed input:\n");
+            mpc_ast_print(r.output);
+            printf("Lval object:\n");
             lval_pretty_print(read);
+            printf("Current env:\n");
+            lenv_pretty_print(env);
+            printf("Eval result:\n");
 #endif
             val = lval_eval(env, read);
-#ifdef _DEBUG
-            mpc_ast_print(r.output);
-            putchar('\n');
-            lenv_pretty_print(env);
-#endif
             lval_println(val);
             lval_del(val);
             mpc_ast_delete(r.output);

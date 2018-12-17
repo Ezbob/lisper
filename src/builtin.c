@@ -708,19 +708,19 @@ lval_t *builtin_put(lenv_t *e, lval_t *v) {
 lval_t *builtin_var(lenv_t *e, lval_t *v, char *sym) {
     LARG_TYPE(v, sym, 0, LVAL_QEXPR);
 
-    lval_t *names = v->val.l.cells[0];
+    lval_t *names = LGETCELL(v, 0);
 
     for ( size_t i = 0; i < names->val.l.count; ++i ) {
-        LASSERT(v, names->val.l.cells[i]->type == LVAL_SYM, "Function '%s' cannot assign value(s) to name(s). Name %lu is of type '%s'; expected type '%s'.", sym, i, ltype_name(names->val.l.cells[i]->type), ltype_name(LVAL_SYM));
+        LASSERT(v, LGETCELL(names, i)->type == LVAL_SYM, "Function '%s' cannot assign value(s) to name(s). Name %lu is of type '%s'; expected type '%s'.", sym, i, ltype_name(LGETCELL(names, i)->type), ltype_name(LVAL_SYM));
     }
 
     LASSERT(v, names->val.l.count == v->val.l.count - 1, "Function '%s' cannot assign value(s) to name(s). Number of name(s) and value(s) does not match. Saw %lu name(s) expected %lu value(s).", sym, names->val.l.count, v->val.l.count - 1);
 
     for ( size_t i = 0; i < names->val.l.count; ++i ) {
         if ( strcmp(sym, "def") == 0 ) {
-            lenv_def(e, names->val.l.cells[i], v->val.l.cells[i + 1]);
+            lenv_def(e, LGETCELL(names, i), LGETCELL(v, i + 1));
         } else if ( strcmp(sym, "=") == 0 ) {
-            lenv_put(e, names->val.l.cells[i], v->val.l.cells[i + 1]);
+            lenv_put(e, LGETCELL(names, i), LGETCELL(v, i + 1));
         }
     }
 

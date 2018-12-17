@@ -654,59 +654,89 @@ lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
 
 
 lval_t *lval_eval_sexpr(lenv_t *e, lval_t *v) {
+    /* empty sexpr */
+    if ( v->val.l.count == 0 ) {
+        return v;
+    }
 
-    /* depth-first eval of sexpr */
+    /*
+     * Intercept assignment and defs to make symbols qouted 
+     */
+    lval_t *first = v->val.l.cells[0];
+    if ( first->type == LVAL_SYM && v->val.l.count > 1 ) {
+        lval_t *sec = v->val.l.cells[1];
+        if ( (strcmp(first->val.strval, "=") == 0 || 
+             strcmp(first->val.strval, "def") == 0) &&
+             sec->type == LVAL_SYM
+            ) {
+            lval_t *qexpr = lval_qexpr();
+            v->val.l.cells[1] = lval_add(qexpr, sec);
+        }
+    }
+
+    /* Depth-first evaluation of sexpr arguments.
+       This resolves the actual meaning of the sexpr, such that
+       what operator to apply to this sexpr is known, and if 
+       there was any error executing nested sexpr etc...
+     */
     for ( size_t i = 0; i < v->val.l.count; i++ ) {
         v->val.l.cells[i] = lval_eval(e, v->val.l.cells[i]);
     }
 
-    /* return first error */
+    /* Hoist first lval if only one is available.
+       This helps to sub results of sexprs, but
+       the sub lval has to be evaluated first.
+     */
+    if ( v->val.l.count == 1 ) {
+        return lval_take(v, 0);
+    }
+
+    /* Return first error (if any) */
     for ( size_t i = 0; i < v->val.l.count; i++ ) {
         if ( v->val.l.cells[i]->type == LVAL_ERR ) {
             return lval_take(v, i);
         }
     }
 
-    /* empty sexpr */
-    if ( v->val.l.count == 0 ) {
-        return v;
-    }
-
-    /* hoist first lval if only one is available */
-    if ( v->val.l.count == 1 ) {
-        return lval_take(v, 0);
-    }
-
-    lval_t *f = lval_pop(v, 0);
+    /* Function evaluation.
+       Take the first lval in the sexpression and apply it to the
+       following lval sequence 
+    */
+    lval_t *operator = lval_pop(v, 0);
     lval_t *res = NULL;
-    char *t = NULL;
+    char *type_name = NULL;
 
-    /* function evaluation */
-    switch ( f->type ) {
+    switch ( operator->type ) {
         case LVAL_LAMBDA:
         case LVAL_BUILTIN:
-            res = lval_call(e, f, v);
+            res = lval_call(e, operator, v);
             break;
         default:
-            t = ltype_name(f->type);
-            lval_del(f);
+            type_name = ltype_name(operator->type);
+            lval_del(operator);
             lval_del(v);
-            return lval_err("Expected first argument of %s to be of type '%s'; got '%s'.", ltype_name(LVAL_SEXPR), ltype_name(LVAL_BUILTIN), t);
+            return lval_err("Expected first argument of %s to be of type '%s'; got '%s'.", 
+                        ltype_name(LVAL_SEXPR), ltype_name(LVAL_BUILTIN), type_name);
     }
 
-    lval_del(f);
+    lval_del(operator);
     return res;
 }
 
 lval_t *lval_eval(lenv_t *e, lval_t *v) {
+
     lval_t *x;
     switch ( v->type ) {
         case LVAL_SYM:
-            x = lenv_get(e, v);
+            /* eval'ing symbols just looks up the symbol in the symbol table
+               Discards the wrapping.
+             */
+            x = lenv_get(e, v); 
             lval_del(v);
             return x;
 
         case LVAL_SEXPR:
+            /* this might by a nested sexpr or toplevel */
             return lval_eval_sexpr(e, v);
         default:
             break;

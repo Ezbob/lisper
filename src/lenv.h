@@ -4,15 +4,15 @@
 #include "lval.h"
 #include <stdlib.h>
 
-typedef struct lenv_entry_t {
+struct lenv_entry_t {
     char *name;
     lval_t *envval;
     struct lenv_entry_t *next;
-} lenv_entry_t;
+};
 
 struct lenv_t {
     struct lenv_t *parent;
-    lenv_entry_t **entries;
+    struct lenv_entry_t **entries;
     size_t capacity;
 };
 
