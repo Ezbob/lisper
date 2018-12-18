@@ -37,8 +37,8 @@ extern grammar_elems elems;
 extern struct argument_capture *args;
 
 /* env preallocated sizes */
-const size_t lambda_cap = 100;
-const size_t fun_cap = 200;
+const size_t lambda_env_prealloc = 50;
+const size_t fun_env_prealloc = 200;
 
 /* * math builtins * */
 
@@ -652,41 +652,53 @@ lval_t *builtin_lambda(lenv_t *e, lval_t *v) {
 
     for ( size_t i = 0; i < formals->val.l.count; ++i ) {
        LASSERT(v, formals->val.l.cells[i]->type == LVAL_SYM,
-            "Expected parameter %lu to be of type '%s'; got type '%s'.", i + 1, ltype_name(LVAL_SYM), ltype_name(formals->val.l.cells[i]->type));
+            "Expected parameter %lu to be of type '%s'; got type '%s'.", 
+            i + 1, ltype_name(LVAL_SYM), ltype_name(formals->val.l.cells[i]->type));
     }
 
     formals = lval_pop(v, 0);
     body = lval_pop(v, 0);
     lval_del(v);
 
-    return lval_lambda(formals, body, lambda_cap);
+    return lval_lambda(formals, body, lambda_env_prealloc);
 }
 
-lval_t *builtin_fun(lenv_t *e, lval_t*v) {
-    LNUM_ARGS(v, "fun", 2);
-    LARG_TYPE(v, "fun", 0, LVAL_QEXPR);
-    LARG_TYPE(v, "fun", 1, LVAL_QEXPR);
+/**
+ *  Function declaration builtin
+ */
+lval_t *builtin_fn(lenv_t *e, lval_t*v) {
+    LNUM_ARGS(v, "fn", 3);
+    LARG_TYPE(v, "fn", 0, LVAL_QEXPR); // function name
+    LARG_TYPE(v, "fn", 1, LVAL_QEXPR); // parameter list
+    LARG_TYPE(v, "fn", 2, LVAL_QEXPR); // body 
 
-    lval_t *formals = v->val.l.cells[0];
+    lval_t *name = LGETCELL(v, 0);
+    lval_t *formals = LGETCELL(v, 1);
+    lval_t *body = LGETCELL(v, 2);
 
-    LASSERT(v, formals->val.l.count > 0, "Expected argument list be of least size %i.", 1);
-    LASSERT(v, formals->val.l.cells[0]->type == LVAL_SYM, "Expected function name to be of type '%s'; got '%s'", ltype_name(LVAL_SYM), ltype_name(formals->val.l.cells[0]->type));
+    /* checking function name */
+    LASSERT(v, name->val.l.count == 1, 
+        "Function was parsed a empty function name. A function must be named", 0);
+    LASSERT(v, LGETCELL(name, 0)->type == LVAL_SYM, 
+        "Expected function name to be of type '%s'; got type '%s'.", 
+        ltype_name(LVAL_SYM), ltype_name(LGETCELL(name, 0)->type));
 
-    lval_t *body = v->val.l.cells[1];
-
-    for ( size_t i = 1; i < formals->val.l.count; ++i ) {
-       LASSERT(v, formals->val.l.cells[i]->type == LVAL_SYM,
-            "Expected parameter %lu to be of type '%s'; got type '%s'.", i + 1, ltype_name(LVAL_SYM), ltype_name(formals->val.l.cells[i]->type));
+    /* checking formals parameters */
+    for ( size_t i = 0; i < formals->val.l.count; ++i ) {
+       LASSERT(v, LGETCELL(formals, i)->type == LVAL_SYM,
+            "Expected parameter %lu to be of type '%s'; got type '%s'.", 
+            i + 1, ltype_name(LVAL_SYM), ltype_name(LGETCELL(formals, i)->type));
     }
 
+    /* params are ok poping them off the value */
+    name = lval_pop(v, 0);
     formals = lval_pop(v, 0);
-    lval_t *name = lval_pop(formals, 0);
-
     body = lval_pop(v, 0);
-    lval_t *fun = lval_lambda(formals, body, fun_cap);
 
-    lenv_put(e, name, fun);
-    lval_del(fun);
+    lval_t *fn = lval_lambda(formals, body, fun_env_prealloc);
+
+    lenv_put(e, LGETCELL(name, 0), fn);
+    lval_del(fn);
     lval_del(name);
     lval_del(v);
 
@@ -840,12 +852,11 @@ lval_t *builtin_not(lenv_t *e, lval_t *v) {
 /* source importation builtins */
 
 lval_t *builtin_load(lenv_t *e, lval_t *v) {
-
     LNUM_ARGS(v, "load", 1);
     LARG_TYPE(v, "load", 0, LVAL_STR);
 
     mpc_result_t r;
-    if ( mpc_parse_contents(v->val.l.cells[0]->val.strval, elems.Lisper, &r) ) {
+    if ( mpc_parse_contents(LGETCELL(v, 0)->val.strval, elems.Lisper, &r) ) {
 
         lval_t *expr = lval_read(r.output);
         mpc_ast_delete(r.output);
@@ -889,7 +900,7 @@ void register_builtins(lenv_t *e) {
     LENV_BUILTIN(exit);
     LENV_BUILTIN(max);
     LENV_BUILTIN(min);
-    LENV_BUILTIN(fun);
+    LENV_BUILTIN(fn);
     LENV_BUILTIN(if);
     LENV_BUILTIN(args);
     LENV_BUILTIN(type);

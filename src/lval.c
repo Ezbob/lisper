@@ -581,7 +581,7 @@ lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
             /* Error case: non-symbolic parameter parsed */
             lval_del(v);
             return lval_err(
-                "Function passed too many arguments; "
+                "Function parsed too many arguments; "
                 "got %lu expected %lu",
                 given,
                 total
@@ -660,17 +660,19 @@ lval_t *lval_eval_sexpr(lenv_t *e, lval_t *v) {
     }
 
     /*
-     * Intercept assignment and defs to make symbols qouted 
+     * Intercept special sexpr to make symbols qouted 
      */
     lval_t *first = v->val.l.cells[0];
     if ( first->type == LVAL_SYM && v->val.l.count > 1 ) {
         lval_t *sec = v->val.l.cells[1];
-        if ( (strcmp(first->val.strval, "=") == 0 || 
-             strcmp(first->val.strval, "def") == 0) &&
-             sec->type == LVAL_SYM
-            ) {
-            lval_t *qexpr = lval_qexpr();
-            v->val.l.cells[1] = lval_add(qexpr, sec);
+        if ( 
+            (
+                strcmp(first->val.strval, "=") == 0    || 
+                strcmp(first->val.strval, "def") == 0  ||
+                strcmp(first->val.strval, "fn") == 0
+            ) && sec->type == LVAL_SYM
+        ) {
+            v->val.l.cells[1] = lval_add(lval_qexpr(), sec);
         }
     }
 
