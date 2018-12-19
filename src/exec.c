@@ -5,6 +5,7 @@
 #include "lval.h"
 #include "lenv.h"
 #include "builtin.h"
+#include "lisper.h"
 
 #ifdef _WIN32
 #include <string.h>
@@ -42,7 +43,7 @@ void goodbye_exit(void) {
 
 void exec_repl(lenv_t *env, grammar_elems elems) {
     char *input;
-    printf("lisper version %s\n", "0.2.0");
+    printf("lisper version %s\n", LISPER_VERSION);
     printf("Anders Busch 2018\n");
     puts("Press Ctrl+c to Exit\n");
 

@@ -660,6 +660,7 @@ lval_t *lval_eval_sexpr(lenv_t *e, lval_t *v) {
     }
 
     /*
+     * Implicit qouting
      * Intercept special sexpr to make symbols qouted 
      */
     lval_t *first = v->val.l.cells[0];

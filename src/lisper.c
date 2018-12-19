@@ -53,12 +53,18 @@ int main(int argc, char **argv) {
 
     signal(SIGINT, signal_handler);
     atexit(exit_handler);
+    
+    if ( parse_prg_params(argc, argv, &params) != 0 ) {
+        fprintf(stderr, "Error: Couldn't parse lisper arguments\n");
+        exit(1);
+    }
 
-    if ( argc >= 2 ) {
-        if ( parse_prg_params(argc, argv, &params) != 0 ) {
-            printf("Error dude couldn't parse arguments");
-            exit(1);
-        }
+    if ( handle_prg_params(&params) != 0 ) {
+        fprintf(stderr, "Error: Encountered error in handling lisper arguments\n");
+        exit(1);
+    }
+
+    if ( params.filename != NULL ) {        
         exec_filein(env, &params);
     } else {
         exec_repl(env, elems);
