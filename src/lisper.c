@@ -55,13 +55,13 @@ int main(int argc, char **argv) {
     atexit(exit_handler);
     
     if ( parse_prg_params(argc, argv, &params) != 0 ) {
-        fprintf(stderr, "Error: Couldn't parse lisper arguments\n");
-        exit(1);
+        fprintf(stderr, "Error: Couldn't parse lisper program arguments\n");
+        exit_with_help(1);
     }
 
     if ( handle_prg_params(&params) != 0 ) {
         fprintf(stderr, "Error: Encountered error in handling lisper arguments\n");
-        exit(1);
+        exit_with_help(1);
     }
 
     if ( params.filename != NULL ) {        
