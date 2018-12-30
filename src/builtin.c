@@ -12,8 +12,8 @@
 
 #define LIS_NUM(type) (type == LVAL_INT || type == LVAL_FLOAT)
 
-#define LASSERT(args, cond, fmt, ...) \
-    if ( !(cond) ) { lval_t *err = lval_err(fmt, ##__VA_ARGS__); lval_del(args); return err;  }
+#define LASSERT(lvalue, cond, fmt, ...) \
+    if ( !(cond) ) { lval_t *err = lval_err(fmt, ##__VA_ARGS__); lval_del(lvalue); return err;  }
 
 #define LNUM_LEAST_ARGS(sym, funcname, numargs) \
     LASSERT(sym, sym->val.l.count >= numargs, "Wrong number of arguments parsed to '%s'. Expected at least %lu argument(s); got %lu. ", funcname, numargs, sym->val.l.count)
@@ -33,6 +33,15 @@
 #define LENV_BUILTIN(name) lenv_add_builtin(e, #name, builtin_##name)
 #define LENV_SYMBUILTIN(sym, name) lenv_add_builtin(e, sym, builtin_##name)
 
+#define LMATH_TYPE_CHECK(lvalue, sym) do { \
+    ltype expected_arg_type = LGETCELL(lvalue, 0)->type; \
+    LASSERT(lvalue, LIS_NUM(expected_arg_type), "Cannot operate on argument at position %i. Non-number type '%s' parsed to operator '%s'.", 1, ltype_name(expected_arg_type), sym); \
+    for ( size_t i = 1; i < lvalue->val.l.count; i++ ) { \
+        lval_t *curr = LGETCELL(lvalue, i); \
+        LASSERT(lvalue, expected_arg_type == curr->type, "Argument type mismatch. Expected argument at position %lu to be of type '%s'; got type '%s'.", i + 1, ltype_name(expected_arg_type), ltype_name(curr->type)); \
+    } \
+} while (0)
+
 extern grammar_elems elems;
 extern struct argument_capture *args;
 
@@ -42,156 +51,206 @@ const size_t fun_env_prealloc = 200;
 
 /* * math builtins * */
 
-lval_t *builtin_op(lenv_t *e, lval_t *v, char *sym) {
-    UNUSED(e);
-
-    ltype last_type = v->val.l.cells[0]->type;
-
-    if ( !LIS_NUM(v->val.l.cells[0]->type) ) {
-        lval_t *err = lval_err("Cannot operate on argument %i. Non-number type '%s' parsed to %s.", 1, ltype_name(v->val.l.cells[0]->type), sym);
-        lval_del(v);
-        return err;
-    }
-
-    for ( size_t i = 1; i < v->val.l.count; i++ ) {
-        if ( !LIS_NUM(v->val.l.cells[i]->type) ) {
-            lval_t *err = lval_err("Cannot operate on argument %lu. Non-number type '%s' parsed to %s.", i + 1, ltype_name(v->val.l.cells[i]->type), sym);
-            lval_del(v);
-            return err;
-        }
-        if ( last_type != v->val.l.cells[i]->type ) {
-            lval_t *err = lval_err("Argument type mismatch. Argument %lu is of type '%s', while argument %lu is of type '%s'.", i, ltype_name(last_type), i + 1, ltype_name(v->val.l.cells[i]->type));
-            lval_del(v);
-            return err;
-        }
-        last_type = v->val.l.cells[i]->type;
-    }
-
-    lval_t *a = lval_pop(v, 0);
-
-    if ( a->type == LVAL_INT ) {
-        /* int val */
-        if ( strcmp(sym, "-") == 0 && v->val.l.count == 0 ) {
-            a->val.intval = (-a->val.intval);
-        }
-
-        while ( v->val.l.count > 0 ) {
-            lval_t *b = lval_pop(v, 0);
-
-            if ( strcmp(sym, "+") == 0 ) {
-                a->val.intval += b->val.intval;
-            } else if ( strcmp(sym, "-") == 0 ) {
-                a->val.intval -= b->val.intval;
-            } else if ( strcmp(sym, "*") == 0 ) {
-                a->val.intval *= b->val.intval;
-            } else if ( strcmp(sym, "/") == 0 ) {
-                if ( b->val.intval == 0 ) {
-                    lval_del(a);
-                    lval_del(b);
-                    a = lval_err("Division by zero");
-                    break;
-                }
-                a->val.intval /= b->val.intval;
-            } else if ( strcmp(sym, "%") == 0 ) {
-                if ( b->val.intval == 0 ) {
-                    lval_del(a);
-                    lval_del(b);
-                    a = lval_err("Division by zero");
-                    break;
-                }
-                a->val.intval %= b->val.intval;
-            } else if ( strcmp(sym, "min") == 0 ) {
-                if ( a->val.intval > b->val.intval ) {
-                    a->val.intval = b->val.intval;
-                }
-            } else if ( strcmp(sym, "max") == 0 )  {
-                if ( a->val.intval < b->val.intval ) {
-                    a->val.intval = b->val.intval;
-                }
-            }
-            lval_del(b);
-        }
-
-    } else {
-        /* Floating point */
-        if ( strcmp(sym, "-") == 0 && v->val.l.count == 0 ) {
-            a->val.floatval = (-a->val.floatval);
-        }
-
-        while ( v->val.l.count > 0 ) {
-            lval_t *b = lval_pop(v, 0);
-
-            if ( strcmp(sym, "+") == 0 ) {
-                a->val.floatval += b->val.floatval;
-            } else if ( strcmp(sym, "-") == 0 ) {
-                a->val.floatval -= b->val.floatval;
-            } else if ( strcmp(sym, "*") == 0 ) {
-                a->val.floatval *= b->val.floatval;
-            } else if ( strcmp(sym, "/") == 0 ) {
-                if ( b->val.floatval == 0 ) {
-                    lval_del(a);
-                    lval_del(b);
-                    a = lval_err("Division by zero");
-                    break;
-                }
-                a->val.floatval /= b->val.floatval;
-            } else if ( strcmp(sym, "%") == 0 ) {
-                if ( b->val.floatval == 0 ) {
-                    lval_del(a);
-                    lval_del(b);
-                    a = lval_err("Division by zero");
-                    break;
-                }
-                a->val.floatval = fmod(a->val.floatval, b->val.floatval);
-            } else if ( strcmp(sym, "min") == 0 ) {
-                if ( a->val.floatval > b->val.floatval ) {
-                    a->val.floatval = b->val.floatval;
-                }
-            } else if ( strcmp(sym, "max") == 0 )  {
-                if ( a->val.floatval < b->val.floatval ) {
-                    a->val.floatval = b->val.floatval;
-                }
-            }
-            lval_del(b);
-        }
-    }
-
-    lval_del(v);
-    return a;
-}
-
-/* math operators */
-
 lval_t *builtin_add(lenv_t *e, lval_t *a) {
-    return builtin_op(e, a, "+");
+    UNUSED(e);
+    LMATH_TYPE_CHECK(a, "+");
+    lval_t *res = lval_pop(a, 0);
+
+    if ( res->type == LVAL_INT ) {
+        while ( a->val.l.count > 0 ) {
+            lval_t *b = lval_pop(a, 0);
+            res->val.intval += b->val.intval;
+            lval_del(b);
+        }
+    } else {
+        while ( a->val.l.count > 0 ) {
+            lval_t *b = lval_pop(a, 0);
+            res->val.floatval += b->val.floatval;
+            lval_del(b);
+        }
+    }
+
+    lval_del(a);
+    return res;
 }
 
 lval_t *builtin_sub(lenv_t *e, lval_t *a) {
-    return builtin_op(e, a, "-");
+    UNUSED(e);
+    LMATH_TYPE_CHECK(a, "-");
+    lval_t *res = lval_pop(a, 0);
+
+    if ( res->type == LVAL_INT ) {
+        if ( a->val.l.count == 0 ) {
+            res->val.intval = (-res->val.intval);
+        } else {
+            while ( a->val.l.count > 0 ) {
+                lval_t *b = lval_pop(a, 0);
+                res->val.intval -= b->val.intval;
+                lval_del(b);
+            }
+        }
+    } else {
+        if ( a->val.l.count == 0 ) {
+            res->val.floatval = (-res->val.floatval);
+        } else {
+            while ( a->val.l.count > 0 ) {
+                lval_t *b = lval_pop(a, 0);
+                res->val.floatval -= b->val.floatval;
+                lval_del(b);
+            }
+        }
+    }
+
+    lval_del(a);
+    return res;
 }
 
 lval_t *builtin_mul(lenv_t *e, lval_t *a) {
-    return builtin_op(e, a, "*");
+    UNUSED(e);
+    LMATH_TYPE_CHECK(a, "*");
+    lval_t *res = lval_pop(a, 0);
+
+    if ( res->type == LVAL_INT ) {
+        while ( a->val.l.count > 0 ) {
+            lval_t *b = lval_pop(a, 0);
+            res->val.intval *= b->val.intval;
+            lval_del(b);
+        }
+    } else {
+        while ( a->val.l.count > 0 ) {
+            lval_t *b = lval_pop(a, 0);
+            res->val.floatval *= b->val.floatval;
+            lval_del(b);
+        }
+    }
+
+    lval_del(a);
+    return res;
 }
 
 lval_t *builtin_div(lenv_t *e, lval_t *a) {
-    return builtin_op(e, a, "/");
+    UNUSED(e);
+    LMATH_TYPE_CHECK(a, "/");
+    lval_t *res = lval_pop(a, 0);
+
+    if ( res->type == LVAL_INT ) {
+        while ( a->val.l.count > 0 ) {
+            lval_t *b = lval_pop(a, 0);
+            if ( b->val.intval == 0 ) {
+                lval_del(res);
+                lval_del(b);
+                res = lval_err("Division by zero");
+                break;
+            }
+            res->val.intval /= b->val.intval;
+            lval_del(b);
+        }
+    } else {
+        while ( a->val.l.count > 0 ) {
+            lval_t *b = lval_pop(a, 0);
+            if ( b->val.floatval == 0 ) {
+                lval_del(res);
+                lval_del(b);
+                res = lval_err("Division by zero");
+                break;
+            }
+            res->val.floatval /= b->val.floatval;
+            lval_del(b);
+        }
+    }
+
+    lval_del(a);
+    return res;
 }
 
-lval_t *builtin_pow(lenv_t *e, lval_t *a) {
-    return builtin_op(e, a, "^");
-}
 
 lval_t *builtin_mod(lenv_t *e, lval_t *a) {
-    return builtin_op(e, a, "%");
+    UNUSED(e);
+    LMATH_TYPE_CHECK(a, "%");
+    lval_t *res = lval_pop(a, 0);
+
+    if ( res->type == LVAL_INT ) {
+        while ( a->val.l.count > 0 ) {
+            lval_t *b = lval_pop(a, 0);
+            if ( b->val.intval == 0 ) {
+                lval_del(res);
+                lval_del(b);
+                res = lval_err("Division by zero");
+                break;
+            }
+            res->val.intval %= b->val.intval;
+            lval_del(b);
+        }
+    } else {
+        while ( a->val.l.count > 0 ) {
+            lval_t *b = lval_pop(a, 0);
+            if ( b->val.floatval == 0 ) {
+                lval_del(res);
+                lval_del(b);
+                res = lval_err("Division by zero");
+                break;
+            }
+            res->val.floatval = fmod(res->val.floatval, b->val.floatval);
+            lval_del(b);
+        }
+    }
+
+    lval_del(a);
+    return res;
 }
 
 lval_t *builtin_min(lenv_t *e, lval_t *a) {
-    return builtin_op(e, a, "min");
+    UNUSED(e);
+    LMATH_TYPE_CHECK(a, "min");
+    lval_t *res = lval_pop(a, 0);
+
+    if ( res->type == LVAL_INT ) {
+        while ( a->val.l.count > 0 ) {
+            lval_t *b = lval_pop(a, 0);
+            if ( res->val.intval > b->val.intval ) {
+                res->val.intval = b->val.intval;
+            }
+            lval_del(b);
+        }
+    } else {
+        while ( a->val.l.count > 0 ) {
+            lval_t *b = lval_pop(a, 0);
+            if ( res->val.floatval > b->val.floatval ) {
+                res->val.floatval = b->val.floatval;
+            }
+            lval_del(b);
+        }
+    }
+
+    lval_del(a);
+    return res;
 }
 
 lval_t *builtin_max(lenv_t *e, lval_t *a) {
-    return builtin_op(e, a, "max");
+    UNUSED(e);
+    LMATH_TYPE_CHECK(a, "max");
+    lval_t *res = lval_pop(a, 0);
+
+    if ( res->type == LVAL_INT ) {
+        while ( a->val.l.count > 0 ) {
+            lval_t *b = lval_pop(a, 0);
+            if ( res->val.intval < b->val.intval ) {
+                res->val.intval = b->val.intval;
+            }
+            lval_del(b);
+        }
+    } else {
+        while ( a->val.l.count > 0 ) {
+            lval_t *b = lval_pop(a, 0);
+            if ( res->val.floatval < b->val.floatval ) {
+                res->val.floatval = b->val.floatval;
+            }
+            lval_del(b);
+        }
+    }
+
+    lval_del(a);
+    return res;
 }
 
 /* * q-expression specific builtins * */
@@ -921,7 +980,6 @@ void register_builtins(lenv_t *e) {
     LENV_SYMBUILTIN("*", mul);
     LENV_SYMBUILTIN("/", div);
     LENV_SYMBUILTIN("%", mod);
-    LENV_SYMBUILTIN("^", pow);
     LENV_SYMBUILTIN("\\", lambda);
     LENV_SYMBUILTIN("=", put);
 
