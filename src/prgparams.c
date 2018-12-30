@@ -35,6 +35,7 @@ int parse_prg_params(int argc, char **argv, struct lisper_params *params) {
             filename = current;
             break; /* program filename found stopping lisper argument parsing  */
         } else if ( strlen(current) > 0 ) {
+            /* insert optional parse conditions here */
             if ( strcmp(current, "--help") == 0 || strcmp(current, "-h") == 0 ) {
                 help = 1;
                 arg_count++;

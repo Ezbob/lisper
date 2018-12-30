@@ -18,17 +18,17 @@
 #define LNUM_LEAST_ARGS(sym, funcname, numargs) \
     LASSERT(sym, sym->val.l.count >= numargs, "Wrong number of arguments parsed to '%s'. Expected at least %lu argument(s); got %lu. ", funcname, numargs, sym->val.l.count)
 
-#define LNUM_ARGS(sym, funcname, numargs) \
-    LASSERT(sym, sym->val.l.count == numargs, "Wrong number of arguments parsed to '%s'. Expected at exactly %lu argument(s); got %lu. ", funcname, numargs, sym->val.l.count)
+#define LNUM_ARGS(lvalue, func_name, numargs) \
+    LASSERT(lvalue, lvalue->val.l.count == numargs, "Wrong number of arguments parsed to '%s'. Expected at exactly %lu argument(s); got %lu. ", func_name, numargs, lvalue->val.l.count)
 
-#define LNOT_EMPTY_QEXPR(sym, funcname, i) \
-    LASSERT(sym, sym->val.l.cells[i]->type == LVAL_QEXPR && sym->val.l.cells[i]->val.l.count > 0, "Empty %s parsed to '%s'.", ltype_name(sym->val.l.cells[i]->type, funcname))
+#define LNOT_EMPTY_QEXPR(lvalue, func_name, i) \
+    LASSERT(lvalue, lvalue->val.l.cells[i]->type == LVAL_QEXPR && lvalue->val.l.cells[i]->val.l.count > 0, "Empty %s parsed to '%s'.", ltype_name(lvalue->val.l.cells[i]->type, func_name))
 
-#define LARG_TYPE(sym, funcname, i, expected) \
-    LASSERT(sym, sym->val.l.cells[i]->type == expected, "Wrong type of argument parsed to '%s'. Expected argument to be of type '%s'; got '%s'.", funcname, ltype_name(expected), ltype_name(sym->val.l.cells[i]->type))
+#define LARG_TYPE(lvalue, func_name, i, expected) \
+    LASSERT(lvalue, lvalue->val.l.cells[i]->type == expected, "Wrong type of argument parsed to '%s' at argument position %lu. Expected argument to be of type '%s'; got '%s'.", func_name, (i + 1), ltype_name(expected), ltype_name(lvalue->val.l.cells[i]->type))
 
-#define LTWO_ARG_TYPES(sym, funcname, i, first_expect, second_expect) \
-    LASSERT(sym, sym->val.l.cells[i]->type == first_expect || sym->val.l.cells[i]->type == second_expect, "Wrong type of argument parsed to '%s'. Expected argument to be of type '%s' or '%s'; got '%s'.", funcname, ltype_name(first_expect), ltype_name(second_expect), ltype_name(sym->val.l.cells[i]->type))
+#define LTWO_ARG_TYPES(lvalue, func_name, i, first_expect, second_expect) \
+    LASSERT(lvalue, lvalue->val.l.cells[i]->type == first_expect || lvalue->val.l.cells[i]->type == second_expect, "Wrong type of argument parsed to '%s'. Expected argument to be of type '%s' or '%s'; got '%s'.", func_name, ltype_name(first_expect), ltype_name(second_expect), ltype_name(lvalue->val.l.cells[i]->type))
 
 #define LENV_BUILTIN(name) lenv_add_builtin(e, #name, builtin_##name)
 #define LENV_SYMBUILTIN(sym, name) lenv_add_builtin(e, sym, builtin_##name)
@@ -72,7 +72,7 @@ lval_t *builtin_op(lenv_t *e, lval_t *v, char *sym) {
     if ( a->type == LVAL_INT ) {
         /* int val */
         if ( strcmp(sym, "-") == 0 && v->val.l.count == 0 ) {
-            a->val.intval = -a->val.intval;
+            a->val.intval = (-a->val.intval);
         }
 
         while ( v->val.l.count > 0 ) {
@@ -115,7 +115,7 @@ lval_t *builtin_op(lenv_t *e, lval_t *v, char *sym) {
     } else {
         /* Floating point */
         if ( strcmp(sym, "-") == 0 && v->val.l.count == 0 ) {
-            a->val.floatval = -a->val.floatval;
+            a->val.floatval = (-a->val.floatval);
         }
 
         while ( v->val.l.count > 0 ) {
