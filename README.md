@@ -32,6 +32,10 @@ To use the REPL simply invoke the intepreter:
 This will drop you into a interactive session that can be exited by invoking the `exit 0` expression or pressing Ctrl+C .
 To evaluate source files, simply add the filenames as command line arguments to the interpreter invocation:
 ```
-./lisper mysource.lspr myothersource.lspr
+./lisper mysource.lspr
 ```
 The `examples` directory in the repo contains some example source files that can be run in this manner.
+```
+./lisper --help
+```
+Lists the command line options and usage available.
