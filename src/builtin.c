@@ -34,7 +34,7 @@
 #define LENV_SYMBUILTIN(sym, name) lenv_add_builtin(e, sym, builtin_##name)
 
 #define LMATH_TYPE_CHECK(lvalue, sym) do { \
-    ltype expected_arg_type = LGETCELL(lvalue, 0)->type; \
+    enum ltype expected_arg_type = LGETCELL(lvalue, 0)->type; \
     LASSERT(lvalue, LIS_NUM(expected_arg_type), "Cannot operate on argument at position %i. Non-number type '%s' parsed to operator '%s'.", 1, ltype_name(expected_arg_type), sym); \
     for ( size_t i = 1; i < lvalue->val.l.count; i++ ) { \
         lval_t *curr = LGETCELL(lvalue, i); \

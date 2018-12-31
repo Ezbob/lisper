@@ -14,7 +14,7 @@ void exit_with_help(int exit_code) {
             "  -h, --help               show this message and exit\n"
             "\n"
             "Lisper online source code repository: <https://www.github.com/Ezbob/lisper>\n"
-            "Licensed under the very permissive MIT license\n"
+            "Licensed under the very permissive MIT license\n" 
           );
     exit(exit_code);
 }

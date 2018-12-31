@@ -85,16 +85,16 @@ lval_t *lval_builtin(lbuiltin f) {
     return val;
 }
 
-lfunc_t *lfunc_new(lenv_t *env, lval_t *formals, lval_t *body) {
-    lfunc_t *new = malloc(sizeof(lfunc_t));
+struct lfunc_t *lfunc_new(lenv_t *env, lval_t *formals, lval_t *body) {
+    struct lfunc_t *new = malloc(sizeof(struct lfunc_t));
     new->env = env;
     new->formals = formals;
     new->body = body;
     return new;
 }
 
-lfile_t *lfile_new(lval_t *path, lval_t *mode, FILE *fp) {
-    lfile_t *new = malloc(sizeof(lfile_t));
+struct lfile_t *lfile_new(lval_t *path, lval_t *mode, FILE *fp) {
+    struct lfile_t *new = malloc(sizeof(struct lfile_t));
     new->path = path;
     new->mode = mode;
     new->fp = fp;
@@ -115,10 +115,10 @@ lval_t *lval_file(lval_t *path, lval_t *mode, FILE *fp) {
     return nw;
 }
 
-void lfunc_del(lfunc_t *);
-void lfile_del(lfile_t *);
 
 void lval_del(lval_t *val) {
+    struct lfile_t *file;
+    struct lfunc_t *func;
     switch (val->type) {
         case LVAL_FLOAT:
         case LVAL_INT:
@@ -126,10 +126,17 @@ void lval_del(lval_t *val) {
         case LVAL_BOOL:
             break;
         case LVAL_LAMBDA:
-            lfunc_del(val->val.fun);
+            func = val->val.fun;
+            lenv_del(func->env);
+            lval_del(func->formals);
+            lval_del(func->body);
+            free(func);
             break;
         case LVAL_FILE:
-            lfile_del(val->val.file);
+            file = val->val.file;
+            lval_del(file->path);
+            lval_del(file->mode);
+            free(file);
             break;
         case LVAL_ERR:
         case LVAL_SYM:
@@ -147,20 +154,11 @@ void lval_del(lval_t *val) {
     mempool_recycle(lval_mp, val);
 }
 
-void lfile_del(lfile_t *f) {
-    lval_del(f->path);
-    lval_del(f->mode);
 
-    free(f);
-}
-
-void lfunc_del(lfunc_t *f) {
-    lenv_del(f->env);
-    lval_del(f->formals);
-    lval_del(f->body);
-    free(f);
-}
-
+/**
+ * Prints lvalue expressions (such as sexprs) given the prefix, 
+ * suffix and delimiter
+ */
 void lval_expr_print(lval_t *val, char prefix, char suffix, char delimiter) {
     putchar(prefix);
 
@@ -176,8 +174,11 @@ void lval_expr_print(lval_t *val, char prefix, char suffix, char delimiter) {
     putchar(suffix);
 }
 
+/**
+ * Escapes the string value of the input lvalue
+ * and prints the value to the stdout
+ */
 void lval_print_str(lval_t *v) {
-
     char *escaped = malloc(strlen(v->val.strval) + 1);
     strcpy(escaped, v->val.strval);
 
@@ -187,6 +188,9 @@ void lval_print_str(lval_t *v) {
     free(escaped);
 }
 
+/**
+ * Prints the lvalue contents to stdout
+ */
 void lval_print(lval_t *val) {
     switch ( val->type ) {
         case LVAL_FLOAT:
@@ -399,6 +403,10 @@ lval_t *lval_read(mpc_ast_t *t) {
     return val;
 }
 
+/**
+ * Pops the value of the input lvalue at index i,
+ * and resizes the memory buffer
+ */
 lval_t *lval_pop(lval_t *v, int i) {
     lval_t *x = v->val.l.cells[i];
     memmove(v->val.l.cells + i, v->val.l.cells + (i + 1), sizeof(lval_t *) * (v->val.l.count - i - 1));
@@ -415,14 +423,20 @@ lval_t *lval_pop(lval_t *v, int i) {
     return x;
 }
 
+/**
+ * Pop the value off the input value at index i, and
+ * delete the input value
+ */
 lval_t *lval_take(lval_t *v, int i) {
     lval_t *x = lval_pop(v, i);
     lval_del(v);
     return x;
 }
 
+/**
+ * Create a copy of the input lvalue
+ */
 lval_t *lval_copy(lval_t *v) {
-
     lval_t *x = mempool_take(lval_mp);
     x->type = v->type;
     lval_t *p;
@@ -472,6 +486,11 @@ lval_t *lval_copy(lval_t *v) {
     return x;
 }
 
+/**
+ * Compare two lvalues for equality.
+ * Returns zero if input values x and y are not equal,
+ * returns a non-zero otherwise
+ */
 int lval_eq(lval_t *x, lval_t *y) {
     if ( x->type != y->type ) {
         return 0;
@@ -511,7 +530,10 @@ int lval_eq(lval_t *x, lval_t *y) {
     return 0;
 }
 
-char *ltype_name(ltype t) {
+/**
+ * Given a lvalue type, return it's string representation 
+ */
+char *ltype_name(enum ltype t) {
     switch ( t ) {
         case LVAL_SYM:
             return "symbol";
@@ -539,6 +561,9 @@ char *ltype_name(ltype t) {
     return "Unknown";
 }
 
+/**
+ * Helper function for printing lvalue 
+ */
 void lval_depth_print(lval_t *v, size_t depth) {
     
     for ( size_t i = 0; i < depth; ++i ) {
@@ -557,17 +582,24 @@ void lval_depth_print(lval_t *v, size_t depth) {
     }
 }
 
+/**
+ *  Pretty print a lvalue revealing it's structure.
+ *  Good for debugging your thoughts
+ */
 void lval_pretty_print(lval_t *v) {
     lval_depth_print(v, 0);
 }
 
+/**
+ * evaluate a function
+ */
 lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
 
     if ( f->type == LVAL_BUILTIN ) {
         return f->val.builtin(e, v);
     }
 
-    lfunc_t *func = f->val.fun;
+    struct lfunc_t *func = f->val.fun;
     lval_t **args = v->val.l.cells;
     lval_t *formals = func->formals;
 

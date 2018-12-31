@@ -4,7 +4,7 @@
 #include "mpc.h"
 #include <stdlib.h>
 
-typedef enum ltype {
+enum ltype {
     LVAL_INT,
     LVAL_FLOAT,
     LVAL_ERR,
@@ -16,7 +16,7 @@ typedef enum ltype {
     LVAL_FILE,
     LVAL_BOOL,
     LVAL_STR
-} ltype;
+};
 
 struct lval_t; 
 struct lenv_t;
@@ -24,35 +24,35 @@ struct lenv_t;
 typedef struct lval_t lval_t;
 typedef struct lenv_t lenv_t;
 
-typedef lval_t *(*lbuiltin)(lenv_t *, lval_t *);
+typedef struct lval_t *(*lbuiltin)(struct lenv_t *, struct lval_t *);
 
-typedef struct lcells_t {
+struct lcells_t {
     size_t count;
     struct lval_t **cells;
-} lcells_t;
+};
 
-typedef struct lfunc_t {
+struct lfunc_t {
     lenv_t *env;
     lval_t *formals;
     lval_t *body;
-} lfunc_t;
+};
 
-typedef struct lfile_t {
+struct lfile_t {
     lval_t *path;
     lval_t *mode;
     FILE *fp;
-} lfile_t;
+};
 
 struct lval_t {
-    ltype type;
+    enum ltype type;
     union val {
         double floatval;
         long long intval;
         char *strval;
-        lcells_t l;
+        struct lcells_t l;
         lbuiltin builtin;
-        lfunc_t *fun;
-        lfile_t *file;
+        struct lfunc_t *fun;
+        struct lfile_t *file;
     } val;
 };
 
@@ -87,7 +87,7 @@ int lval_eq(lval_t *, lval_t *);
 lval_t *lval_call(lenv_t *, lval_t *, lval_t *);
 lval_t *lval_eval(lenv_t *, lval_t *);
 
-char *ltype_name(ltype);
+char *ltype_name(enum ltype);
 void lval_pretty_print(lval_t *);
 
 #endif
