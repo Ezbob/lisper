@@ -18,29 +18,29 @@ enum ltype {
     LVAL_STR
 };
 
-struct lval_t; 
-struct lenv_t;
+struct lvalue; 
+struct lenvironment;
 
-typedef struct lval_t *(*lbuiltin)(struct lenv_t *, struct lval_t *);
+typedef struct lvalue *(*lbuiltin)(struct lenvironment *, struct lvalue *);
 
 struct lcells_t {
     size_t count;
-    struct lval_t **cells;
+    struct lvalue **cells;
 };
 
 struct lfunc_t {
-    struct lenv_t *env;
-    struct lval_t *formals;
-    struct lval_t *body;
+    struct lenvironment *env;
+    struct lvalue *formals;
+    struct lvalue *body;
 };
 
 struct lfile_t {
-    struct lval_t *path;
-    struct lval_t *mode;
+    struct lvalue *path;
+    struct lvalue *mode;
     FILE *fp;
 };
 
-struct lval_t {
+struct lvalue {
     enum ltype type;
     union val {
         double floatval;
@@ -53,39 +53,39 @@ struct lval_t {
     } val;
 };
 
-struct lval_t *lval_read(mpc_ast_t *);
+struct lvalue *lvalue_read(mpc_ast_t *);
 
-void lval_print(struct lval_t *);
-void lval_println(struct lval_t *);
-void lval_del(struct lval_t *);
+void lvalue_print(struct lvalue *);
+void lvalue_println(struct lvalue *);
+void lvalue_del(struct lvalue *);
 
-/* lval constructors */
-struct lval_t *lval_err(char *, ...);
-struct lval_t *lval_float(double);
-struct lval_t *lval_bool(long long);
-struct lval_t *lval_int(long long);
-struct lval_t *lval_sym(char *);
-struct lval_t *lval_str(char *);
-struct lval_t *lval_builtin(lbuiltin);
-struct lval_t *lval_sexpr(void);
-struct lval_t *lval_qexpr(void);
-struct lval_t *lval_lambda(struct lval_t *, struct lval_t *, size_t);
-struct lval_t *lval_file(struct lval_t *, struct lval_t *, FILE *);
+/* lvalue constructors */
+struct lvalue *lvalue_err(char *, ...);
+struct lvalue *lvalue_float(double);
+struct lvalue *lvalue_bool(long long);
+struct lvalue *lvalue_int(long long);
+struct lvalue *lvalue_sym(char *);
+struct lvalue *lvalue_str(char *);
+struct lvalue *lvalue_builtin(lbuiltin);
+struct lvalue *lvalue_sexpr(void);
+struct lvalue *lvalue_qexpr(void);
+struct lvalue *lvalue_lambda(struct lvalue *, struct lvalue *, size_t);
+struct lvalue *lvalue_file(struct lvalue *, struct lvalue *, FILE *);
 
-/* lval transformers */
-struct lval_t *lval_add(struct lval_t *, struct lval_t *);
-struct lval_t *lval_offer(struct lval_t *, struct lval_t *);
-struct lval_t *lval_join(struct lval_t *, struct lval_t *);
-struct lval_t *lval_join_str(struct lval_t *, struct lval_t *);
-struct lval_t *lval_pop(struct lval_t *, int);
-struct lval_t *lval_take(struct lval_t *, int); /* same as pop except frees input lval */
-struct lval_t *lval_copy(struct lval_t *);
-int lval_eq(struct lval_t *, struct lval_t *);
-struct lval_t *lval_call(struct lenv_t *, struct lval_t *, struct lval_t *);
-struct lval_t *lval_eval(struct lenv_t *, struct lval_t *);
+/* lvalue transformers */
+struct lvalue *lvalue_add(struct lvalue *, struct lvalue *);
+struct lvalue *lvalue_offer(struct lvalue *, struct lvalue *);
+struct lvalue *lvalue_join(struct lvalue *, struct lvalue *);
+struct lvalue *lvalue_join_str(struct lvalue *, struct lvalue *);
+struct lvalue *lvalue_pop(struct lvalue *, int);
+struct lvalue *lvalue_take(struct lvalue *, int); /* same as pop except frees input lvalue */
+struct lvalue *lvalue_copy(struct lvalue *);
+int lvalue_eq(struct lvalue *, struct lvalue *);
+struct lvalue *lvalue_call(struct lenvironment *, struct lvalue *, struct lvalue *);
+struct lvalue *lvalue_eval(struct lenvironment *, struct lvalue *);
 
 char *ltype_name(enum ltype);
-void lval_pretty_print(struct lval_t *);
+void lvalue_pretty_print(struct lvalue *);
 
 #endif
 

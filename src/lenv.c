@@ -4,14 +4,14 @@
 #include "builtin.h"
 #include "lval.h"
 
-size_t lenv_hash( size_t capacity, char *k ) {
+size_t lenvironment_hash( size_t capacity, char *key ) {
     size_t i;
     size_t res = 0;
-    size_t k_size = strlen(k);
+    size_t key_size = strlen(key);
 
-    for ( i = 0; i < k_size; ++i ) {
-        res += k[i];
-        if ( i < k_size - 1 ) {
+    for ( i = 0; i < key_size; ++i ) {
+        res += key[i];
+        if ( i < key_size - 1 ) {
             res <<= 1;
         }
     }
@@ -19,8 +19,8 @@ size_t lenv_hash( size_t capacity, char *k ) {
     return res % capacity;
 }
 
-struct lenv_entry_t *lenv_entry_new(void) {
-    struct lenv_entry_t *entry = malloc(sizeof(struct lenv_entry_t));
+struct lenvironment_entry *lenvironment_entry_new(void) {
+    struct lenvironment_entry *entry = malloc(sizeof(struct lenvironment_entry));
     entry->name = NULL;
     entry->envval = NULL;
     entry->next = NULL;
@@ -28,38 +28,38 @@ struct lenv_entry_t *lenv_entry_new(void) {
     return entry;
 }
 
-void lenv_entry_del(struct lenv_entry_t *e) {
+void lenvironment_entry_del(struct lenvironment_entry *e) {
     if ( e->envval != NULL ) {
-        lval_del(e->envval);
+        lvalue_del(e->envval);
     }
     if ( e->name != NULL ) {
         free(e->name);
     }
     if ( e->next != NULL ) {
-        lenv_entry_del(e->next);
+        lenvironment_entry_del(e->next);
     }
     free(e);
 }
 
-struct lenv_entry_t *lenv_entry_copy(struct lenv_entry_t *e) {
-    struct lenv_entry_t *x = lenv_entry_new();
+struct lenvironment_entry *lenvironment_entry_copy(struct lenvironment_entry *e) {
+    struct lenvironment_entry *x = lenvironment_entry_new();
 
     if ( !(e->name == NULL || e->envval == NULL) ) {
         x->name = calloc(strlen(e->name) + 1, sizeof(char));
         strcpy(x->name, e->name);
-        x->envval = lval_copy(e->envval);
+        x->envval = lvalue_copy(e->envval);
     }
 
     if ( e->next != NULL ) {
-        x->next = lenv_entry_copy(e->next);
+        x->next = lenvironment_entry_copy(e->next);
     }
     return x;
 }
 
-struct lenv_t *lenv_new(size_t capacity) {
-    struct lenv_t *env = malloc(sizeof(struct lenv_t));
+struct lenvironment *lenvironment_new(size_t capacity) {
+    struct lenvironment *env = malloc(sizeof(struct lenvironment));
     env->parent = NULL;
-    env->entries = malloc(capacity * sizeof(struct lenv_entry_t *));
+    env->entries = malloc(capacity * sizeof(struct lenvironment_entry *));
     env->capacity = capacity;
     for (size_t i = 0; i < capacity; ++i) {
         env->entries[i] = NULL;
@@ -67,87 +67,87 @@ struct lenv_t *lenv_new(size_t capacity) {
     return env;
 }
 
-void lenv_del(struct lenv_t *env) {
+void lenvironment_del(struct lenvironment *env) {
     if ( env == NULL ) {
         return;
     }
     env->parent = NULL;
     for ( size_t i = 0; i < env->capacity; ++i ) {
         if ( env->entries[i] != NULL ) {
-            lenv_entry_del(env->entries[i]);
+            lenvironment_entry_del(env->entries[i]);
         }
     }
     free(env->entries);
     free(env);
 }
 
-struct lenv_t *lenv_copy(struct lenv_t *env) {
-    struct lenv_t *new = lenv_new(env->capacity);
+struct lenvironment *lenvironment_copy(struct lenvironment *env) {
+    struct lenvironment *new = lenvironment_new(env->capacity);
     new->parent = env->parent;
     for ( size_t i = 0; i < env->capacity; ++i ) {
         if ( env->entries[i] != NULL ) {
-            new->entries[i] = lenv_entry_copy(env->entries[i]);
+            new->entries[i] = lenvironment_entry_copy(env->entries[i]);
         }
     }
 
     return new;
 }
 
-void lenv_add_builtin(struct lenv_t *e, char *name, lbuiltin func) {
-    struct lval_t *k = lval_sym(name);
-    struct lval_t *v = lval_builtin(func);
+void lenvironment_add_builtin(struct lenvironment *e, char *name, lbuiltin func) {
+    struct lvalue *k = lvalue_sym(name);
+    struct lvalue *v = lvalue_builtin(func);
 
-    lenv_put(e, k, v);
+    lenvironment_put(e, k, v);
 
-    lval_del(k);
-    lval_del(v);
+    lvalue_del(k);
+    lvalue_del(v);
 }
 
-struct lval_t *lenv_get(struct lenv_t *e, struct lval_t *k) {
+struct lvalue *lenvironment_get(struct lenvironment *e, struct lvalue *k) {
 
-    size_t i = lenv_hash(e->capacity, k->val.strval);
-    struct lenv_entry_t *entry = e->entries[i];
+    size_t i = lenvironment_hash(e->capacity, k->val.strval);
+    struct lenvironment_entry *entry = e->entries[i];
 
     if ( entry != NULL ) {
         if ( strcmp(entry->name, k->val.strval) == 0 ) {
             /* found */
-            return lval_copy(entry->envval);
+            return lvalue_copy(entry->envval);
         }
-        struct lenv_entry_t *iter = entry->next;
+        struct lenvironment_entry *iter = entry->next;
         /* go through the linked list */
         while ( iter != NULL ) {
             if ( strcmp(iter->name, k->val.strval) == 0 ) {
                 /* found in chain */
-                return lval_copy(iter->envval);
+                return lvalue_copy(iter->envval);
             }
         }
     } else if ( e->parent != NULL ) {
-        return lenv_get(e->parent, k);
+        return lenvironment_get(e->parent, k);
     }
 
-    return lval_err("Unbound symbol '%s'", k->val.strval);
+    return lvalue_err("Unbound symbol '%s'", k->val.strval);
 }
 
-void lenv_put(struct lenv_t *e, struct lval_t *k, struct lval_t *v) {
-    size_t i = lenv_hash(e->capacity, k->val.strval);
+void lenvironment_put(struct lenvironment *e, struct lvalue *k, struct lvalue *v) {
+    size_t i = lenvironment_hash(e->capacity, k->val.strval);
 
-    struct lenv_entry_t *entry = e->entries[i];
+    struct lenvironment_entry *entry = e->entries[i];
     if ( entry == NULL ) {
         /* chain is empty */
-        entry = lenv_entry_new();
-        entry->envval = lval_copy(v);
+        entry = lenvironment_entry_new();
+        entry->envval = lvalue_copy(v);
         entry->name = calloc(strlen(k->val.strval) + 1, sizeof(char));
         strcpy(entry->name, k->val.strval);
         e->entries[i] = entry;
     } else {
         /* chain is non-empty */
-        struct lenv_entry_t *iter = entry;
+        struct lenvironment_entry *iter = entry;
 
         while ( iter != NULL ) {
             if ( strcmp(iter->name, k->val.strval) == 0 ) {
                 /* match in the chain --> override sematics */
-                lval_del(iter->envval);
-                iter->envval = lval_copy(v);
+                lvalue_del(iter->envval);
+                iter->envval = lvalue_copy(v);
                 return;
             }
             iter = iter->next;
@@ -155,9 +155,9 @@ void lenv_put(struct lenv_t *e, struct lval_t *k, struct lval_t *v) {
 
         /* not found in chain --> offer to front */
 
-        struct lenv_entry_t *old = entry;
-        struct lenv_entry_t *new = lenv_entry_new();
-        new->envval = lval_copy(v);
+        struct lenvironment_entry *old = entry;
+        struct lenvironment_entry *new = lenvironment_entry_new();
+        new->envval = lvalue_copy(v);
         new->name = calloc(strlen(k->val.strval) + 1, sizeof(char));
         strcpy(new->name, k->val.strval);
         new->next = old;
@@ -165,19 +165,19 @@ void lenv_put(struct lenv_t *e, struct lval_t *k, struct lval_t *v) {
     }
 }
 
-void lenv_def(struct lenv_t *e, struct lval_t *k, struct lval_t *v) {
+void lenvironment_def(struct lenvironment *e, struct lvalue *k, struct lvalue *v) {
 
     while ( e->parent != NULL ) {
         e = e->parent;
     }
-    lenv_put(e, k, v);
+    lenvironment_put(e, k, v);
 }
 
-void lenv_pretty_print(struct lenv_t *e) {
+void lenvironment_pretty_print(struct lenvironment *e) {
     for ( size_t i = 0; i < e->capacity; ++i ) {
         if ( e->entries[i] != NULL ) {
             printf("i: %lu    (n: '%s' t: '%s' p: %p)", i, e->entries[i]->name, ltype_name(e->entries[i]->envval->type), (void *) (e->entries[i]->envval));
-            struct lenv_entry_t *iter = e->entries[i]->next;
+            struct lenvironment_entry *iter = e->entries[i]->next;
             while ( iter != NULL ) {
                 printf("-o-(n: '%s' t: '%s' p: %p)", iter->name, ltype_name(iter->envval->type), (void *) iter->envval);
                 iter = iter->next;

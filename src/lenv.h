@@ -4,26 +4,26 @@
 #include "lval.h"
 #include <stdlib.h>
 
-struct lenv_entry_t {
+struct lenvironment_entry {
     char *name;
-    struct lval_t *envval;
-    struct lenv_entry_t *next;
+    struct lvalue *envval;
+    struct lenvironment_entry *next;
 };
 
-struct lenv_t {
-    struct lenv_t *parent;
-    struct lenv_entry_t **entries;
+struct lenvironment {
+    struct lenvironment *parent;
+    struct lenvironment_entry **entries;
     size_t capacity;
 };
 
-struct lenv_t *lenv_new(size_t cap);
-void lenv_del(struct lenv_t *);
-struct lenv_t *lenv_copy(struct lenv_t *);
-struct lval_t *lenv_get(struct lenv_t *, struct lval_t *);
-void lenv_def(struct lenv_t *, struct lval_t *, struct lval_t *);
-void lenv_put(struct lenv_t *, struct lval_t *, struct lval_t *);
-void lenv_add_builtin(struct lenv_t *, char *, lbuiltin);
-void lenv_pretty_print(struct lenv_t *);
+struct lenvironment *lenvironment_new(size_t cap);
+void lenvironment_del(struct lenvironment *);
+struct lenvironment *lenvironment_copy(struct lenvironment *);
+struct lvalue *lenvironment_get(struct lenvironment *, struct lvalue *);
+void lenvironment_def(struct lenvironment *, struct lvalue *, struct lvalue *);
+void lenvironment_put(struct lenvironment *, struct lvalue *, struct lvalue *);
+void lenvironment_add_builtin(struct lenvironment *, char *, lbuiltin);
+void lenvironment_pretty_print(struct lenvironment *);
 
 #endif
 

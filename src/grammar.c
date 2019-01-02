@@ -1,8 +1,7 @@
 #include "mpc.h"
 #include "grammar.h"
 
-
-void grammar_elems_init(grammar_elems *elems) {
+void grammar_elems_init(struct grammar_elems *elems) {
     elems->Boolean = mpc_new("boolean");
     elems->Integer = mpc_new("integer");
     elems->Float = mpc_new("float");
@@ -15,7 +14,7 @@ void grammar_elems_init(grammar_elems *elems) {
     elems->Lisper = mpc_new("lisper");
 }
 
-void grammar_elems_destroy(grammar_elems *elems) {
+void grammar_elems_destroy(struct grammar_elems *elems) {
     mpc_cleanup(10,
         elems->Boolean,
         elems->Integer,
@@ -30,7 +29,7 @@ void grammar_elems_destroy(grammar_elems *elems) {
     );
 }
 
-void grammar_make_lang(grammar_elems *elems) {
+void grammar_make_lang(struct grammar_elems *elems) {
     
     mpca_lang(MPCA_LANG_DEFAULT,
         "string     : /\"(\\\\.|[^\"])*\"/ ;"

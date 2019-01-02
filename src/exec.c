@@ -41,19 +41,19 @@ void goodbye_exit(void) {
     putchar('\n');
 }
 
-void exec_repl(struct lenv_t *env, grammar_elems elems) {
+void exec_repl(struct lenvironment *env, struct grammar_elems *elems) {
     char *input;
     printf("lisper version %s\n", LISPER_VERSION);
     printf("Anders Busch 2018\n");
     puts("Press Ctrl+c to Exit\n");
 
     mpc_result_t r;
-    struct lval_t *val;
+    struct lvalue *val;
 
     atexit(goodbye_exit);
 
 #ifdef _DEBUG
-    lenv_pretty_print(env);
+    lenvironment_pretty_print(env);
 #endif
     while ( 1 ) {
         input = readline("lisper>>> ");
@@ -64,20 +64,20 @@ void exec_repl(struct lenv_t *env, grammar_elems elems) {
 
         add_history(input);
 
-        if ( mpc_parse("<stdin>", input, elems.Lisper, &r) ) {
-            struct lval_t *read = lval_read(r.output);
+        if ( mpc_parse("<stdin>", input, elems->Lisper, &r) ) {
+            struct lvalue *read = lvalue_read(r.output);
 #ifdef _DEBUG
             printf("Parsed input:\n");
             mpc_ast_print(r.output);
             printf("Lval object:\n");
-            lval_pretty_print(read);
+            lvalue_pretty_print(read);
             printf("Current env:\n");
-            lenv_pretty_print(env);
+            lenvironment_pretty_print(env);
             printf("Eval result:\n");
 #endif
-            val = lval_eval(env, read);
-            lval_println(val);
-            lval_del(val);
+            val = lvalue_eval(env, read);
+            lvalue_println(val);
+            lvalue_del(val);
             mpc_ast_delete(r.output);
         } else {
             mpc_err_print(r.error);
@@ -88,12 +88,12 @@ void exec_repl(struct lenv_t *env, grammar_elems elems) {
 }
 
 
-void exec_filein(struct lenv_t *env, struct lisper_params *params) {
-    struct lval_t *args = lval_add(lval_sexpr(), lval_str(params->filename));
-    struct lval_t *x = builtin_load(env, args);
+void exec_filein(struct lenvironment *env, struct lisper_params *params) {
+    struct lvalue *args = lvalue_add(lvalue_sexpr(), lvalue_str(params->filename));
+    struct lvalue *x = builtin_load(env, args);
     if ( x->type == LVAL_ERR ) {
-        lval_println(x);
+        lvalue_println(x);
     }
-    lval_del(x);
+    lvalue_del(x);
 }
 

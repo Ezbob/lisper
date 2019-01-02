@@ -10,11 +10,11 @@
 #include "mempool.h"
 #include "prgparams.h"
 
-grammar_elems elems; /* grammar elems can be reused */
-struct lenv_t *env = NULL; /* Global environment */
+struct grammar_elems elems; /* grammar elems can be reused */
+struct lenvironment *env = NULL; /* Global environment */
 const size_t hash_size = 500;
-struct mempool *lval_mp = NULL;
-const size_t lval_mempool_size = 10000;
+struct mempool *lvalue_mp = NULL;
+const size_t lvalue_mempool_size = 10000;
 struct argument_capture *args;
 
 
@@ -24,14 +24,14 @@ void signal_handler(int signum) {
         exit(0);
     } else {
         grammar_elems_destroy(&elems);
-        lenv_del(env);
+        lenvironment_del(env);
     }
 }
 
 void exit_handler(void) {
     grammar_elems_destroy(&elems);
-    lenv_del(env);
-    mempool_del(lval_mp);
+    lenvironment_del(env);
+    mempool_del(lvalue_mp);
 }
 
 int main(int argc, char **argv) {
@@ -44,8 +44,8 @@ int main(int argc, char **argv) {
 
     args = &capture;
 
-    lval_mp = mempool_init(sizeof(struct lval_t), lval_mempool_size);
-    env = lenv_new(hash_size);
+    lvalue_mp = mempool_init(sizeof(struct lvalue), lvalue_mempool_size);
+    env = lenvironment_new(hash_size);
     register_builtins(env);
 
     grammar_elems_init(&elems);
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     if ( params.filename != NULL ) {        
         exec_filein(env, &params);
     } else {
-        exec_repl(env, elems);
+        exec_repl(env, &elems);
     }
 
     return EXIT_SUCCESS;
