@@ -11,7 +11,7 @@
 #include "prgparams.h"
 
 grammar_elems elems; /* grammar elems can be reused */
-lenv_t *env = NULL; /* Global environment */
+struct lenv_t *env = NULL; /* Global environment */
 const size_t hash_size = 500;
 struct mempool *lval_mp = NULL;
 const size_t lval_mempool_size = 10000;
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 
     args = &capture;
 
-    lval_mp = mempool_init(sizeof(lval_t), lval_mempool_size);
+    lval_mp = mempool_init(sizeof(struct lval_t), lval_mempool_size);
     env = lenv_new(hash_size);
     register_builtins(env);
 

@@ -8,32 +8,32 @@
 
 extern struct mempool *lval_mp;
 
-lval_t *builtin_list(lenv_t *, lval_t *);
-lval_t *builtin_eval(lenv_t *, lval_t *);
+struct lval_t *builtin_list(struct lenv_t *, struct lval_t *);
+struct lval_t *builtin_eval(struct lenv_t *, struct lval_t *);
 
-lval_t *lval_int(long long num) {
-    lval_t *val = mempool_take(lval_mp);
+struct lval_t *lval_int(long long num) {
+    struct lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_INT;
     val->val.intval = num;
     return val;
 }
 
-lval_t *lval_float(double num) {
-    lval_t *val = mempool_take(lval_mp);
+struct lval_t *lval_float(double num) {
+    struct lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_FLOAT;
     val->val.floatval = num;
     return val;
 }
 
-lval_t *lval_bool(long long num) {
-    lval_t *val = mempool_take(lval_mp);
+struct lval_t *lval_bool(long long num) {
+    struct lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_BOOL;
     val->val.intval = num;
     return val;
 }
 
-lval_t *lval_err(char *fmt, ...) {
-    lval_t *val = mempool_take(lval_mp);
+struct lval_t *lval_err(char *fmt, ...) {
+    struct lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_ERR;
     va_list va;
     va_start(va, fmt);
@@ -46,46 +46,46 @@ lval_t *lval_err(char *fmt, ...) {
     return val;
 }
 
-lval_t *lval_sym(char* sym) {
-    lval_t *val = mempool_take(lval_mp);
+struct lval_t *lval_sym(char* sym) {
+    struct lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_SYM;
     val->val.strval = malloc(strlen(sym) + 1);
     strcpy(val->val.strval, sym);
     return val;
 }
 
-lval_t *lval_sexpr(void) {
-    lval_t *val = mempool_take(lval_mp);
+struct lval_t *lval_sexpr(void) {
+    struct lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_SEXPR;
     val->val.l.count = 0;
     val->val.l.cells = NULL;
     return val;
 }
 
-lval_t *lval_qexpr(void) {
-    lval_t *val = mempool_take(lval_mp);
+struct lval_t *lval_qexpr(void) {
+    struct lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_QEXPR;
     val->val.l.count = 0;
     val->val.l.cells = NULL;
     return val;
 }
 
-lval_t *lval_str(char *s) {
-    lval_t *v = mempool_take(lval_mp);
+struct lval_t *lval_str(char *s) {
+    struct lval_t *v = mempool_take(lval_mp);
     v->type = LVAL_STR;
     v->val.strval = malloc(strlen(s) + 1);
     strcpy(v->val.strval, s);
     return v;
 }
 
-lval_t *lval_builtin(lbuiltin f) {
-    lval_t *val = mempool_take(lval_mp);
+struct lval_t *lval_builtin(lbuiltin f) {
+    struct lval_t *val = mempool_take(lval_mp);
     val->type = LVAL_BUILTIN;
     val->val.builtin = f;
     return val;
 }
 
-struct lfunc_t *lfunc_new(lenv_t *env, lval_t *formals, lval_t *body) {
+struct lfunc_t *lfunc_new(struct lenv_t *env, struct lval_t *formals, struct lval_t *body) {
     struct lfunc_t *new = malloc(sizeof(struct lfunc_t));
     new->env = env;
     new->formals = formals;
@@ -93,7 +93,7 @@ struct lfunc_t *lfunc_new(lenv_t *env, lval_t *formals, lval_t *body) {
     return new;
 }
 
-struct lfile_t *lfile_new(lval_t *path, lval_t *mode, FILE *fp) {
+struct lfile_t *lfile_new(struct lval_t *path, struct lval_t *mode, FILE *fp) {
     struct lfile_t *new = malloc(sizeof(struct lfile_t));
     new->path = path;
     new->mode = mode;
@@ -101,22 +101,22 @@ struct lfile_t *lfile_new(lval_t *path, lval_t *mode, FILE *fp) {
     return new;
 }
 
-lval_t *lval_lambda(lval_t *formals, lval_t *body, size_t envcap) {
-    lval_t *nw = mempool_take(lval_mp);
+struct lval_t *lval_lambda(struct lval_t *formals, struct lval_t *body, size_t envcap) {
+    struct lval_t *nw = mempool_take(lval_mp);
     nw->type = LVAL_LAMBDA;
     nw->val.fun = lfunc_new(lenv_new(envcap), formals, body);
     return nw;
 }
 
-lval_t *lval_file(lval_t *path, lval_t *mode, FILE *fp) {
-    lval_t *nw = mempool_take(lval_mp);
+struct lval_t *lval_file(struct lval_t *path, struct lval_t *mode, FILE *fp) {
+    struct lval_t *nw = mempool_take(lval_mp);
     nw->type = LVAL_FILE;
     nw->val.file = lfile_new(path, mode, fp);
     return nw;
 }
 
 
-void lval_del(lval_t *val) {
+void lval_del(struct lval_t *val) {
     struct lfile_t *file;
     struct lfunc_t *func;
     switch (val->type) {
@@ -159,7 +159,7 @@ void lval_del(lval_t *val) {
  * Prints lvalue expressions (such as sexprs) given the prefix, 
  * suffix and delimiter
  */
-void lval_expr_print(lval_t *val, char prefix, char suffix, char delimiter) {
+void lval_expr_print(struct lval_t *val, char prefix, char suffix, char delimiter) {
     putchar(prefix);
 
     size_t len = val->val.l.count;
@@ -178,7 +178,7 @@ void lval_expr_print(lval_t *val, char prefix, char suffix, char delimiter) {
  * Escapes the string value of the input lvalue
  * and prints the value to the stdout
  */
-void lval_print_str(lval_t *v) {
+void lval_print_str(struct lval_t *v) {
     char *escaped = malloc(strlen(v->val.strval) + 1);
     strcpy(escaped, v->val.strval);
 
@@ -191,7 +191,7 @@ void lval_print_str(lval_t *v) {
 /**
  * Prints the lvalue contents to stdout
  */
-void lval_print(lval_t *val) {
+void lval_print(struct lval_t *val) {
     switch ( val->type ) {
         case LVAL_FLOAT:
             printf("%lf", val->val.floatval);
@@ -241,7 +241,7 @@ void lval_print(lval_t *val) {
     }
 }
 
-void lval_println(lval_t *val) {
+void lval_println(struct lval_t *val) {
     lval_print(val);
     putchar('\n');
 }
@@ -251,7 +251,7 @@ enum {
     LREAD_INT = 1
 };
 
-lval_t *lval_read_num(mpc_ast_t *t, int choice) {
+struct lval_t *lval_read_num(mpc_ast_t *t, int choice) {
 
     int code = 0;
     long long int int_read = 0;
@@ -277,9 +277,9 @@ lval_t *lval_read_num(mpc_ast_t *t, int choice) {
     return lval_err("Cloud not parse '%s' as a number.", t->contents);
 }
 
-lval_t *lval_add(lval_t *val, lval_t *other) {
+struct lval_t *lval_add(struct lval_t *val, struct lval_t *other) {
     val->val.l.count++;
-    lval_t **resized_cells = realloc(val->val.l.cells, val->val.l.count * sizeof(lval_t *));
+    struct lval_t **resized_cells = realloc(val->val.l.cells, val->val.l.count * sizeof(struct lval_t *));
     if ( resized_cells == NULL ) {
         lval_del(val);
         lval_del(other);
@@ -291,9 +291,9 @@ lval_t *lval_add(lval_t *val, lval_t *other) {
     return val;
 }
 
-lval_t *lval_offer(lval_t *val, lval_t *other) {
+struct lval_t *lval_offer(struct lval_t *val, struct lval_t *other) {
     val->val.l.count++;
-    lval_t **resized = realloc(val->val.l.cells, val->val.l.count * sizeof(lval_t*));
+    struct lval_t **resized = realloc(val->val.l.cells, val->val.l.count * sizeof(struct lval_t*));
         // resize the memory buffer to carry another cell
 
     if ( resized == NULL ) {
@@ -302,7 +302,7 @@ lval_t *lval_offer(lval_t *val, lval_t *other) {
         exit(1);
     }
     val->val.l.cells = resized;
-    memmove(val->val.l.cells + 1, val->val.l.cells, (val->val.l.count - 1) * sizeof(lval_t*));
+    memmove(val->val.l.cells + 1, val->val.l.cells, (val->val.l.count - 1) * sizeof(struct lval_t*));
         // move memory at address val->val.l.cells (up to old count of cells) to addr val->val.l.cells[1]
 
     val->val.l.cells[0] = other;
@@ -311,7 +311,7 @@ lval_t *lval_offer(lval_t *val, lval_t *other) {
     return val;
 }
 
-lval_t *lval_join_str(lval_t *x, lval_t *y) {
+struct lval_t *lval_join_str(struct lval_t *x, struct lval_t *y) {
     size_t cpy_start = strlen(x->val.strval);
     size_t total_size = cpy_start + strlen(y->val.strval);
 
@@ -329,7 +329,7 @@ lval_t *lval_join_str(lval_t *x, lval_t *y) {
     return x;
 }
 
-lval_t *lval_join(lval_t *x, lval_t *y) {
+struct lval_t *lval_join(struct lval_t *x, struct lval_t *y) {
     while ( y->val.l.count ) {
         x = lval_add(x, lval_pop(y, 0));
     }
@@ -338,7 +338,7 @@ lval_t *lval_join(lval_t *x, lval_t *y) {
     return x;
 }
 
-lval_t *lval_read_str(mpc_ast_t *t) {
+struct lval_t *lval_read_str(mpc_ast_t *t) {
 
     t->contents[strlen(t->contents) - 1] = '\0';
         /* clip off the newline */
@@ -349,14 +349,14 @@ lval_t *lval_read_str(mpc_ast_t *t) {
 
     unescaped = mpcf_unescape(unescaped);
         /* unescape probably inserts a newline into the string */
-    lval_t *str = lval_str(unescaped);
+    struct lval_t *str = lval_str(unescaped);
 
     free(unescaped);
     return str;
 }
 
-lval_t *lval_read(mpc_ast_t *t) {
-    lval_t *val = NULL;
+struct lval_t *lval_read(mpc_ast_t *t) {
+    struct lval_t *val = NULL;
 
     if ( strstr(t->tag, "boolean") ) {
         long long res = (strcmp(t->contents, "true") == 0) ? 1 : 0;
@@ -407,12 +407,12 @@ lval_t *lval_read(mpc_ast_t *t) {
  * Pops the value of the input lvalue at index i,
  * and resizes the memory buffer
  */
-lval_t *lval_pop(lval_t *v, int i) {
-    lval_t *x = v->val.l.cells[i];
-    memmove(v->val.l.cells + i, v->val.l.cells + (i + 1), sizeof(lval_t *) * (v->val.l.count - i - 1));
+struct lval_t *lval_pop(struct lval_t *v, int i) {
+    struct lval_t *x = v->val.l.cells[i];
+    memmove(v->val.l.cells + i, v->val.l.cells + (i + 1), sizeof(struct lval_t *) * (v->val.l.count - i - 1));
     v->val.l.count--;
 
-    lval_t **cs = realloc(v->val.l.cells, v->val.l.count * sizeof(lval_t *));
+    struct lval_t **cs = realloc(v->val.l.cells, v->val.l.count * sizeof(struct lval_t *));
     if ( !cs && v->val.l.count > 0 ) {
         perror("Could not shrink cell buffer");
         lval_del(v);
@@ -427,8 +427,8 @@ lval_t *lval_pop(lval_t *v, int i) {
  * Pop the value off the input value at index i, and
  * delete the input value
  */
-lval_t *lval_take(lval_t *v, int i) {
-    lval_t *x = lval_pop(v, i);
+struct lval_t *lval_take(struct lval_t *v, int i) {
+    struct lval_t *x = lval_pop(v, i);
     lval_del(v);
     return x;
 }
@@ -436,12 +436,12 @@ lval_t *lval_take(lval_t *v, int i) {
 /**
  * Create a copy of the input lvalue
  */
-lval_t *lval_copy(lval_t *v) {
-    lval_t *x = mempool_take(lval_mp);
+struct lval_t *lval_copy(struct lval_t *v) {
+    struct lval_t *x = mempool_take(lval_mp);
     x->type = v->type;
-    lval_t *p;
+    struct lval_t *p;
     FILE *fp;
-    lval_t *m;
+    struct lval_t *m;
 
     switch(v->type) {
         case LVAL_LAMBDA:
@@ -470,7 +470,7 @@ lval_t *lval_copy(lval_t *v) {
         case LVAL_SEXPR:
         case LVAL_QEXPR:
             x->val.l.count = v->val.l.count;
-            x->val.l.cells = malloc(v->val.l.count * sizeof(lval_t *));
+            x->val.l.cells = malloc(v->val.l.count * sizeof(struct lval_t *));
             for ( size_t i = 0; i < x->val.l.count; ++i ) {
                 x->val.l.cells[i] = lval_copy(v->val.l.cells[i]);
             }
@@ -491,7 +491,7 @@ lval_t *lval_copy(lval_t *v) {
  * Returns zero if input values x and y are not equal,
  * returns a non-zero otherwise
  */
-int lval_eq(lval_t *x, lval_t *y) {
+int lval_eq(struct lval_t *x, struct lval_t *y) {
     if ( x->type != y->type ) {
         return 0;
     }
@@ -564,7 +564,7 @@ char *ltype_name(enum ltype t) {
 /**
  * Helper function for printing lvalue 
  */
-void lval_depth_print(lval_t *v, size_t depth) {
+void lval_depth_print(struct lval_t *v, size_t depth) {
     
     for ( size_t i = 0; i < depth; ++i ) {
         putchar(' ');
@@ -586,22 +586,22 @@ void lval_depth_print(lval_t *v, size_t depth) {
  *  Pretty print a lvalue revealing it's structure.
  *  Good for debugging your thoughts
  */
-void lval_pretty_print(lval_t *v) {
+void lval_pretty_print(struct lval_t *v) {
     lval_depth_print(v, 0);
 }
 
 /**
  * evaluate a function
  */
-lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
+struct lval_t *lval_call(struct lenv_t *e, struct lval_t *f, struct lval_t *v) {
 
     if ( f->type == LVAL_BUILTIN ) {
         return f->val.builtin(e, v);
     }
 
     struct lfunc_t *func = f->val.fun;
-    lval_t **args = v->val.l.cells;
-    lval_t *formals = func->formals;
+    struct lval_t **args = v->val.l.cells;
+    struct lval_t *formals = func->formals;
 
     size_t given = v->val.l.count;
     size_t total = formals->val.l.count;
@@ -625,7 +625,7 @@ lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
             break;
         }
 
-        lval_t *sym = lval_pop(formals, 0); /* unbound name */
+        struct lval_t *sym = lval_pop(formals, 0); /* unbound name */
 
         if ( strcmp(sym->val.strval, "&") == 0 ) {
             /* Variable argument case with '&' */
@@ -638,14 +638,14 @@ lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
             }
 
             /* Binding rest of the arguments to nsym */
-            lval_t *nsym = lval_pop(formals, 0);
+            struct lval_t *nsym = lval_pop(formals, 0);
             lenv_put(func->env, nsym, builtin_list(e, v));
             lval_del(sym);
             lval_del(nsym);
             break;
         }
 
-        lval_t *val = lval_pop(v, 0); /* value to apply to unbound name */
+        struct lval_t *val = lval_pop(v, 0); /* value to apply to unbound name */
 
         lenv_put(func->env, sym, val);
         lval_del(sym);
@@ -660,17 +660,17 @@ lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
 
         if ( formals->val.l.count != 2 ) {
             return lval_err(
-                    "Function format invalid. "
-                    "Symbol '&' not followed by single symbol."
-                    );
+                "Function format invalid. "
+                "Symbol '&' not followed by single symbol."
+            );
         }
 
         /* Remove '&' */
         lval_del(lval_pop(formals, 0));
 
         /* Create a empty list for the next symbol */
-        lval_t *sym = lval_pop(formals, 0);
-        lval_t *val = lval_qexpr();
+        struct lval_t *sym = lval_pop(formals, 0);
+        struct lval_t *val = lval_qexpr();
 
         lenv_put(func->env, sym, val);
         lval_del(sym);
@@ -685,7 +685,7 @@ lval_t *lval_call(lenv_t *e, lval_t *f, lval_t *v) {
 }
 
 
-lval_t *lval_eval_sexpr(lenv_t *e, lval_t *v) {
+struct lval_t *lval_eval_sexpr(struct lenv_t *e, struct lval_t *v) {
     /* empty sexpr */
     if ( v->val.l.count == 0 ) {
         return v;
@@ -695,9 +695,9 @@ lval_t *lval_eval_sexpr(lenv_t *e, lval_t *v) {
      * Implicit qouting
      * Intercept special sexpr to make symbols qouted 
      */
-    lval_t *first = v->val.l.cells[0];
+    struct lval_t *first = v->val.l.cells[0];
     if ( first->type == LVAL_SYM && v->val.l.count > 1 ) {
-        lval_t *sec = v->val.l.cells[1];
+        struct lval_t *sec = v->val.l.cells[1];
         if ( 
             (
                 strcmp(first->val.strval, "=") == 0    || 
@@ -737,8 +737,8 @@ lval_t *lval_eval_sexpr(lenv_t *e, lval_t *v) {
        Take the first lval in the sexpression and apply it to the
        following lval sequence 
     */
-    lval_t *operator = lval_pop(v, 0);
-    lval_t *res = NULL;
+    struct lval_t *operator = lval_pop(v, 0);
+    struct lval_t *res = NULL;
     char *type_name = NULL;
 
     switch ( operator->type ) {
@@ -758,9 +758,9 @@ lval_t *lval_eval_sexpr(lenv_t *e, lval_t *v) {
     return res;
 }
 
-lval_t *lval_eval(lenv_t *e, lval_t *v) {
+struct lval_t *lval_eval(struct lenv_t *e, struct lval_t *v) {
 
-    lval_t *x;
+    struct lval_t *x;
     switch ( v->type ) {
         case LVAL_SYM:
             /* Eval'ing symbols just looks up the symbol in the symbol table

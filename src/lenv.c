@@ -56,8 +56,8 @@ struct lenv_entry_t *lenv_entry_copy(struct lenv_entry_t *e) {
     return x;
 }
 
-lenv_t *lenv_new(size_t capacity) {
-    lenv_t *env = malloc(sizeof(lenv_t));
+struct lenv_t *lenv_new(size_t capacity) {
+    struct lenv_t *env = malloc(sizeof(struct lenv_t));
     env->parent = NULL;
     env->entries = malloc(capacity * sizeof(struct lenv_entry_t *));
     env->capacity = capacity;
@@ -67,7 +67,7 @@ lenv_t *lenv_new(size_t capacity) {
     return env;
 }
 
-void lenv_del(lenv_t *env) {
+void lenv_del(struct lenv_t *env) {
     if ( env == NULL ) {
         return;
     }
@@ -81,8 +81,8 @@ void lenv_del(lenv_t *env) {
     free(env);
 }
 
-lenv_t *lenv_copy(lenv_t *env) {
-    lenv_t *new = lenv_new(env->capacity);
+struct lenv_t *lenv_copy(struct lenv_t *env) {
+    struct lenv_t *new = lenv_new(env->capacity);
     new->parent = env->parent;
     for ( size_t i = 0; i < env->capacity; ++i ) {
         if ( env->entries[i] != NULL ) {
@@ -93,9 +93,9 @@ lenv_t *lenv_copy(lenv_t *env) {
     return new;
 }
 
-void lenv_add_builtin(lenv_t *e, char *name, lbuiltin func) {
-    lval_t *k = lval_sym(name);
-    lval_t *v = lval_builtin(func);
+void lenv_add_builtin(struct lenv_t *e, char *name, lbuiltin func) {
+    struct lval_t *k = lval_sym(name);
+    struct lval_t *v = lval_builtin(func);
 
     lenv_put(e, k, v);
 
@@ -103,7 +103,7 @@ void lenv_add_builtin(lenv_t *e, char *name, lbuiltin func) {
     lval_del(v);
 }
 
-lval_t *lenv_get(lenv_t *e, lval_t *k) {
+struct lval_t *lenv_get(struct lenv_t *e, struct lval_t *k) {
 
     size_t i = lenv_hash(e->capacity, k->val.strval);
     struct lenv_entry_t *entry = e->entries[i];
@@ -128,7 +128,7 @@ lval_t *lenv_get(lenv_t *e, lval_t *k) {
     return lval_err("Unbound symbol '%s'", k->val.strval);
 }
 
-void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
+void lenv_put(struct lenv_t *e, struct lval_t *k, struct lval_t *v) {
     size_t i = lenv_hash(e->capacity, k->val.strval);
 
     struct lenv_entry_t *entry = e->entries[i];
@@ -165,7 +165,7 @@ void lenv_put(lenv_t *e, lval_t *k, lval_t *v) {
     }
 }
 
-void lenv_def(lenv_t *e, lval_t *k, lval_t *v) {
+void lenv_def(struct lenv_t *e, struct lval_t *k, struct lval_t *v) {
 
     while ( e->parent != NULL ) {
         e = e->parent;
@@ -173,7 +173,7 @@ void lenv_def(lenv_t *e, lval_t *k, lval_t *v) {
     lenv_put(e, k, v);
 }
 
-void lenv_pretty_print(lenv_t *e) {
+void lenv_pretty_print(struct lenv_t *e) {
     for ( size_t i = 0; i < e->capacity; ++i ) {
         if ( e->entries[i] != NULL ) {
             printf("i: %lu    (n: '%s' t: '%s' p: %p)", i, e->entries[i]->name, ltype_name(e->entries[i]->envval->type), (void *) (e->entries[i]->envval));

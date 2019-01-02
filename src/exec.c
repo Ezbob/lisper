@@ -41,14 +41,14 @@ void goodbye_exit(void) {
     putchar('\n');
 }
 
-void exec_repl(lenv_t *env, grammar_elems elems) {
+void exec_repl(struct lenv_t *env, grammar_elems elems) {
     char *input;
     printf("lisper version %s\n", LISPER_VERSION);
     printf("Anders Busch 2018\n");
     puts("Press Ctrl+c to Exit\n");
 
     mpc_result_t r;
-    lval_t *val;
+    struct lval_t *val;
 
     atexit(goodbye_exit);
 
@@ -65,7 +65,7 @@ void exec_repl(lenv_t *env, grammar_elems elems) {
         add_history(input);
 
         if ( mpc_parse("<stdin>", input, elems.Lisper, &r) ) {
-            lval_t *read = lval_read(r.output);
+            struct lval_t *read = lval_read(r.output);
 #ifdef _DEBUG
             printf("Parsed input:\n");
             mpc_ast_print(r.output);
@@ -88,9 +88,9 @@ void exec_repl(lenv_t *env, grammar_elems elems) {
 }
 
 
-void exec_filein(lenv_t *env, struct lisper_params *params) {
-    lval_t *args = lval_add(lval_sexpr(), lval_str(params->filename));
-    lval_t *x = builtin_load(env, args);
+void exec_filein(struct lenv_t *env, struct lisper_params *params) {
+    struct lval_t *args = lval_add(lval_sexpr(), lval_str(params->filename));
+    struct lval_t *x = builtin_load(env, args);
     if ( x->type == LVAL_ERR ) {
         lval_println(x);
     }

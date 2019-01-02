@@ -5,8 +5,8 @@
 #include "grammar.h"
 #include "prgparams.h"
 
-void exec_repl(lenv_t *, struct grammar_elems);
+void exec_repl(struct lenv_t *, struct grammar_elems);
 
-void exec_filein(lenv_t *, struct lisper_params *);
+void exec_filein(struct lenv_t *, struct lisper_params *);
 
 #endif

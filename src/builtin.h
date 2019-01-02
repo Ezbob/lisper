@@ -4,9 +4,9 @@
 #include "lval.h"
 #include "lenv.h"
 
-lval_t *builtin_load(lenv_t *, lval_t *);
+struct lval_t *builtin_load(struct lenv_t *, struct lval_t *);
 
-void register_builtins(lenv_t *e);
+void register_builtins(struct lenv_t *e);
 
 #endif
 

@@ -21,9 +21,6 @@ enum ltype {
 struct lval_t; 
 struct lenv_t;
 
-typedef struct lval_t lval_t;
-typedef struct lenv_t lenv_t;
-
 typedef struct lval_t *(*lbuiltin)(struct lenv_t *, struct lval_t *);
 
 struct lcells_t {
@@ -32,14 +29,14 @@ struct lcells_t {
 };
 
 struct lfunc_t {
-    lenv_t *env;
-    lval_t *formals;
-    lval_t *body;
+    struct lenv_t *env;
+    struct lval_t *formals;
+    struct lval_t *body;
 };
 
 struct lfile_t {
-    lval_t *path;
-    lval_t *mode;
+    struct lval_t *path;
+    struct lval_t *mode;
     FILE *fp;
 };
 
@@ -56,39 +53,39 @@ struct lval_t {
     } val;
 };
 
-lval_t *lval_read(mpc_ast_t *);
+struct lval_t *lval_read(mpc_ast_t *);
 
-void lval_print(lval_t *);
-void lval_println(lval_t *);
-void lval_del(lval_t *);
+void lval_print(struct lval_t *);
+void lval_println(struct lval_t *);
+void lval_del(struct lval_t *);
 
 /* lval constructors */
-lval_t *lval_err(char *, ...);
-lval_t *lval_float(double);
-lval_t *lval_bool(long long);
-lval_t *lval_int(long long);
-lval_t *lval_sym(char *);
-lval_t *lval_str(char *);
-lval_t *lval_builtin(lbuiltin);
-lval_t *lval_sexpr(void);
-lval_t *lval_qexpr(void);
-lval_t *lval_lambda(lval_t *, lval_t *, size_t);
-lval_t *lval_file(lval_t *, lval_t *, FILE *);
+struct lval_t *lval_err(char *, ...);
+struct lval_t *lval_float(double);
+struct lval_t *lval_bool(long long);
+struct lval_t *lval_int(long long);
+struct lval_t *lval_sym(char *);
+struct lval_t *lval_str(char *);
+struct lval_t *lval_builtin(lbuiltin);
+struct lval_t *lval_sexpr(void);
+struct lval_t *lval_qexpr(void);
+struct lval_t *lval_lambda(struct lval_t *, struct lval_t *, size_t);
+struct lval_t *lval_file(struct lval_t *, struct lval_t *, FILE *);
 
 /* lval transformers */
-lval_t *lval_add(lval_t *, lval_t *);
-lval_t *lval_offer(lval_t *, lval_t *);
-lval_t *lval_join(lval_t *, lval_t *);
-lval_t *lval_join_str(lval_t *, lval_t *);
-lval_t *lval_pop(lval_t *, int);
-lval_t *lval_take(lval_t *, int); /* same as pop except frees input lval */
-lval_t *lval_copy(lval_t *);
-int lval_eq(lval_t *, lval_t *);
-lval_t *lval_call(lenv_t *, lval_t *, lval_t *);
-lval_t *lval_eval(lenv_t *, lval_t *);
+struct lval_t *lval_add(struct lval_t *, struct lval_t *);
+struct lval_t *lval_offer(struct lval_t *, struct lval_t *);
+struct lval_t *lval_join(struct lval_t *, struct lval_t *);
+struct lval_t *lval_join_str(struct lval_t *, struct lval_t *);
+struct lval_t *lval_pop(struct lval_t *, int);
+struct lval_t *lval_take(struct lval_t *, int); /* same as pop except frees input lval */
+struct lval_t *lval_copy(struct lval_t *);
+int lval_eq(struct lval_t *, struct lval_t *);
+struct lval_t *lval_call(struct lenv_t *, struct lval_t *, struct lval_t *);
+struct lval_t *lval_eval(struct lenv_t *, struct lval_t *);
 
 char *ltype_name(enum ltype);
-void lval_pretty_print(lval_t *);
+void lval_pretty_print(struct lval_t *);
 
 #endif
 
