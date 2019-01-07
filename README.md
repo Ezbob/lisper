@@ -11,6 +11,7 @@ Repo for a implementation of lisp, following the [buildyourownlisp.com](http://w
 - User defined functions and lambdas
 - User defined immutable values 
 - Read Eval Print Loop (REPL) support
+- Cross OS portablity (Can be compiled to run on Windows, Mac OS or Linux)
 
 ## Setup
 
