@@ -1,8 +1,8 @@
 #ifndef LISPER_BUILTIN
 #define LISPER_BUILTIN
 
-#include "lval.h"
-#include "lenv.h"
+#include "lvalue.h"
+#include "lenvironment.h"
 
 struct lvalue *builtin_load(struct lenvironment *, struct lvalue *);
 

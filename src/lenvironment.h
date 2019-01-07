@@ -1,7 +1,7 @@
 #ifndef LISPER_LENV
 #define LISPER_LENV
 
-#include "lval.h"
+#include "lvalue.h"
 #include <stdlib.h>
 
 struct lenvironment_entry {
@@ -22,7 +22,7 @@ struct lenvironment *lenvironment_copy(struct lenvironment *);
 struct lvalue *lenvironment_get(struct lenvironment *, struct lvalue *);
 void lenvironment_def(struct lenvironment *, struct lvalue *, struct lvalue *);
 void lenvironment_put(struct lenvironment *, struct lvalue *, struct lvalue *);
-void lenvironment_add_builtin(struct lenvironment *, char *, lbuiltin);
+void lenvironment_add_builtin(struct lenvironment *, char *, struct lvalue *(*)(struct lenvironment *, struct lvalue *));
 void lenvironment_pretty_print(struct lenvironment *);
 
 #endif

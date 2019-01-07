@@ -3,8 +3,8 @@
 #include "lisper.h"
 #include "builtin.h"
 #include "grammar.h"
-#include "lval.h"
-#include "lenv.h"
+#include "lvalue.h"
+#include "lenvironment.h"
 
 #define LGETCELL(v, celln) v->val.l.cells[celln]
 

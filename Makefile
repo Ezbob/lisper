@@ -3,15 +3,15 @@ SYMBOLS?=_ARCHLINUX # Arch linux symbol; replace with empty definition to compil
 CFLAGS=-std=c18 $(addprefix -D , ${SYMBOLS}) -Wall -Wextra -pedantic -Wfatal-errors
 LDLIBS=-ledit -lm
 VPATH=src/
-OBJPATH=obj/
+OBJPATH=out/
 
-SRCS=grammar.c builtin.c exec.c mpc.c lisper.c lval.c lenv.c mempool.c prgparams.c
+SRCS=grammar.c builtin.c exec.c mpc.c lisper.c lvalue.c lenvironment.c mempool.c prgparams.c
 OBJS=$(SRCS:%.c=${OBJPATH}%.o)
 HDRS=$(wildcard ${VPATH}*.h)
 TARGET?=lisper
 
 ifeq (${DEBUG}, 1) # use DEBUG=1 to enable debug symbols to be compiled in
-CFLAGS+=-g
+CFLAGS+=-g3 -gdwarf-2
 SYMBOLS+=_DEBUG
 endif
 

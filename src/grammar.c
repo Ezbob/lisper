@@ -36,7 +36,7 @@ void grammar_make_lang(struct grammar_elems *elems) {
         "boolean    : \"true\" | \"false\" ;"
         "float      : /([-+])?[0-9]+(\\.[0-9]*)?[eE][0-9]+/ | /([-+])?[0-9]+\\.[0-9]*/ ;"
         "integer    : /([-+])?[0-9]+/ ;"
-        "symbol     : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%^|]+/ ;"
+        "symbol     : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%|.]+/ ;"
         "comment    : /;[^\\r\\n]*/ ;"
         "qexpr      : '{' <expr>* '}' ;"
         "sexpr      : '(' <expr>* ')' ;"

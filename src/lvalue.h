@@ -21,20 +21,18 @@ enum ltype {
 struct lvalue; 
 struct lenvironment;
 
-typedef struct lvalue *(*lbuiltin)(struct lenvironment *, struct lvalue *);
-
-struct lcells_t {
+struct lcells {
     size_t count;
     struct lvalue **cells;
 };
 
-struct lfunc_t {
+struct lfunction {
     struct lenvironment *env;
     struct lvalue *formals;
     struct lvalue *body;
 };
 
-struct lfile_t {
+struct lfile {
     struct lvalue *path;
     struct lvalue *mode;
     FILE *fp;
@@ -46,10 +44,10 @@ struct lvalue {
         double floatval;
         long long intval;
         char *strval;
-        struct lcells_t l;
-        lbuiltin builtin;
-        struct lfunc_t *fun;
-        struct lfile_t *file;
+        struct lcells l;
+        struct lvalue *(*builtin)(struct lenvironment *, struct lvalue *);
+        struct lfunction *fun;
+        struct lfile *file;
     } val;
 };
 
@@ -66,7 +64,7 @@ struct lvalue *lvalue_bool(long long);
 struct lvalue *lvalue_int(long long);
 struct lvalue *lvalue_sym(char *);
 struct lvalue *lvalue_str(char *);
-struct lvalue *lvalue_builtin(lbuiltin);
+struct lvalue *lvalue_builtin(struct lvalue *(*)(struct lenvironment *, struct lvalue *));
 struct lvalue *lvalue_sexpr(void);
 struct lvalue *lvalue_qexpr(void);
 struct lvalue *lvalue_lambda(struct lvalue *, struct lvalue *, size_t);

@@ -1,10 +1,10 @@
-#include "lenv.h"
+#include "lenvironment.h"
 #include <stdlib.h>
 #include <string.h>
 #include "builtin.h"
-#include "lval.h"
+#include "lvalue.h"
 
-size_t lenvironment_hash( size_t capacity, char *key ) {
+size_t lenvironment_hash(size_t capacity, char *key) {
     size_t i;
     size_t res = 0;
     size_t key_size = strlen(key);
@@ -19,7 +19,7 @@ size_t lenvironment_hash( size_t capacity, char *key ) {
     return res % capacity;
 }
 
-struct lenvironment_entry *lenvironment_entry_new(void) {
+struct lenvironment_entry *lenvironment_entry_new() {
     struct lenvironment_entry *entry = malloc(sizeof(struct lenvironment_entry));
     entry->name = NULL;
     entry->envval = NULL;
@@ -93,7 +93,7 @@ struct lenvironment *lenvironment_copy(struct lenvironment *env) {
     return new;
 }
 
-void lenvironment_add_builtin(struct lenvironment *e, char *name, lbuiltin func) {
+void lenvironment_add_builtin(struct lenvironment *e, char *name, struct lvalue *( *func)(struct lenvironment *, struct lvalue *)) {
     struct lvalue *k = lvalue_sym(name);
     struct lvalue *v = lvalue_builtin(func);
 
@@ -109,20 +109,43 @@ struct lvalue *lenvironment_get(struct lenvironment *e, struct lvalue *k) {
     struct lenvironment_entry *entry = e->entries[i];
 
     if ( entry != NULL ) {
-        if ( strcmp(entry->name, k->val.strval) == 0 ) {
-            /* found */
-            return lvalue_copy(entry->envval);
-        }
-        struct lenvironment_entry *iter = entry->next;
-        /* go through the linked list */
-        while ( iter != NULL ) {
-            if ( strcmp(iter->name, k->val.strval) == 0 ) {
-                /* found in chain */
-                return lvalue_copy(iter->envval);
+        if ( strcmp(entry->name, k->val.strval) == 0 ) { 
+            return lvalue_copy(entry->envval); 
+        } 
+        struct lenvironment_entry *entry_iter = entry->next;
+        /* go through the linked list */ 
+        while ( entry_iter != NULL ) { 
+            if ( strcmp(entry_iter->name, k->val.strval) == 0 ) { 
+                /* found in chain */ 
+                return lvalue_copy(entry_iter->envval); 
+            } 
+        } 
+    } else if ( e->parent != NULL ) {
+        for (
+            struct lenvironment *environment_iter = e->parent; 
+            environment_iter != NULL;
+            environment_iter = environment_iter->parent
+        ) {
+            i = lenvironment_hash(environment_iter->capacity, k->val.strval);
+            entry = environment_iter->entries[i];            
+            if ( entry != NULL ) {
+                break;
             }
         }
-    } else if ( e->parent != NULL ) {
-        return lenvironment_get(e->parent, k);
+
+        if (entry != NULL) {
+            if ( strcmp(entry->name, k->val.strval) == 0 ) { 
+                return lvalue_copy(entry->envval); 
+            } 
+            struct lenvironment_entry *entry_iter = entry->next;
+            /* go through the linked list */ 
+            while ( entry_iter != NULL ) { 
+                if ( strcmp(entry_iter->name, k->val.strval) == 0 ) { 
+                    /* found in chain */ 
+                    return lvalue_copy(entry_iter->envval); 
+                } 
+            } 
+        }
     }
 
     return lvalue_err("Unbound symbol '%s'", k->val.strval);

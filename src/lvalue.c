@@ -1,5 +1,5 @@
-#include "lval.h"
-#include "lenv.h"
+#include "lvalue.h"
+#include "lenvironment.h"
 #include "mempool.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,23 +78,23 @@ struct lvalue *lvalue_str(char *s) {
     return v;
 }
 
-struct lvalue *lvalue_builtin(lbuiltin f) {
+struct lvalue *lvalue_builtin(struct lvalue *( *f)(struct lenvironment *, struct lvalue *)) {
     struct lvalue *val = mempool_take(lvalue_mp);
     val->type = LVAL_BUILTIN;
     val->val.builtin = f;
     return val;
 }
 
-struct lfunc_t *lfunc_new(struct lenvironment *env, struct lvalue *formals, struct lvalue *body) {
-    struct lfunc_t *new = malloc(sizeof(struct lfunc_t));
+struct lfunction *lfunc_new(struct lenvironment *env, struct lvalue *formals, struct lvalue *body) {
+    struct lfunction *new = malloc(sizeof(struct lfunction));
     new->env = env;
     new->formals = formals;
     new->body = body;
     return new;
 }
 
-struct lfile_t *lfile_new(struct lvalue *path, struct lvalue *mode, FILE *fp) {
-    struct lfile_t *new = malloc(sizeof(struct lfile_t));
+struct lfile *lfile_new(struct lvalue *path, struct lvalue *mode, FILE *fp) {
+    struct lfile *new = malloc(sizeof(struct lfile));
     new->path = path;
     new->mode = mode;
     new->fp = fp;
@@ -117,8 +117,8 @@ struct lvalue *lvalue_file(struct lvalue *path, struct lvalue *mode, FILE *fp) {
 
 
 void lvalue_del(struct lvalue *val) {
-    struct lfile_t *file;
-    struct lfunc_t *func;
+    struct lfile *file;
+    struct lfunction *func;
     switch (val->type) {
         case LVAL_FLOAT:
         case LVAL_INT:
@@ -599,7 +599,7 @@ struct lvalue *lvalue_call(struct lenvironment *e, struct lvalue *f, struct lval
         return f->val.builtin(e, v);
     }
 
-    struct lfunc_t *func = f->val.fun;
+    struct lfunction *func = f->val.fun;
     struct lvalue **args = v->val.l.cells;
     struct lvalue *formals = func->formals;
 

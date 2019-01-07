@@ -1,7 +1,7 @@
 #ifndef LISPER_EXEC
 #define LISPER_EXEC
 
-#include "lenv.h"
+#include "lenvironment.h"
 #include "grammar.h"
 #include "prgparams.h"
 
