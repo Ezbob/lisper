@@ -6,7 +6,7 @@
 #include "lenvironment.h"
 #include "lvalue.h"
 #include "builtin.h"
-#include "exec.h"
+#include "execute.h"
 #include "mempool.h"
 #include "prgparams.h"
 
