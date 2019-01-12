@@ -527,15 +527,17 @@ struct lvalue *builtin_tail(struct lenvironment *e, struct lvalue *v) {
             lvalue_del(a);
             return tail;
         }
-        lvalue_del(a);
-        return lvalue_str("");
     } else {
 
         if ( a->val.l.count > 0 ) {
             lvalue_del(lvalue_pop(a, 0));
+            return a;
         }
-        return a;
     }
+
+    char *typename = ltype_name(a->type);
+    lvalue_del(a);
+    return lvalue_err("Attempt to take the tail of empty %s", typename);
 }
 
 struct lvalue *builtin_head(struct lenvironment *e, struct lvalue *v) {

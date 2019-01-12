@@ -1,10 +1,10 @@
-#include "value.h"
-#include "environment.h"
-#include "mempool.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "value.h"
+#include "environment.h"
+#include "mempool.h"
 
 extern struct mempool *lvalue_mp;
 
