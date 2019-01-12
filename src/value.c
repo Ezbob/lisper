@@ -1,5 +1,5 @@
-#include "lvalue.h"
-#include "lenvironment.h"
+#include "value.h"
+#include "environment.h"
 #include "mempool.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -87,6 +87,7 @@ struct lvalue *lvalue_builtin(struct lvalue *( *f)(struct lenvironment *, struct
 
 struct lfunction *lfunc_new(struct lenvironment *env, struct lvalue *formals, struct lvalue *body) {
     struct lfunction *new = malloc(sizeof(struct lfunction));
+    new->name = NULL;
     new->env = env;
     new->formals = formals;
     new->body = body;
@@ -103,7 +104,7 @@ struct lfile *lfile_new(struct lvalue *path, struct lvalue *mode, FILE *fp) {
 
 struct lvalue *lvalue_lambda(struct lvalue *formals, struct lvalue *body, size_t envcap) {
     struct lvalue *nw = mempool_take(lvalue_mp);
-    nw->type = LVAL_LAMBDA;
+    nw->type = LVAL_FUNCTION;
     nw->val.fun = lfunc_new(lenvironment_new(envcap), formals, body);
     return nw;
 }
@@ -125,7 +126,7 @@ void lvalue_del(struct lvalue *val) {
         case LVAL_BUILTIN:
         case LVAL_BOOL:
             break;
-        case LVAL_LAMBDA:
+        case LVAL_FUNCTION:
             func = val->val.fun;
             lenvironment_del(func->env);
             lvalue_del(func->formals);
@@ -221,7 +222,7 @@ void lvalue_print(struct lvalue *val) {
         case LVAL_QEXPR:
             lvalue_expr_print(val, '{', '}', ' ');
             break;
-        case LVAL_LAMBDA:
+        case LVAL_FUNCTION:
             printf("(\\ ");
             lvalue_print(val->val.fun->formals);
             putchar(' ');
@@ -444,7 +445,7 @@ struct lvalue *lvalue_copy(struct lvalue *v) {
     struct lvalue *m;
 
     switch(v->type) {
-        case LVAL_LAMBDA:
+        case LVAL_FUNCTION:
             x->val.fun = lfunc_new(
                 lenvironment_copy(v->val.fun->env),
                 lvalue_copy(v->val.fun->formals),
@@ -508,7 +509,7 @@ int lvalue_eq(struct lvalue *x, struct lvalue *y) {
             return strcmp(x->val.strval, y->val.strval) == 0;
         case LVAL_BUILTIN:
             return (x->val.builtin == y->val.builtin);
-        case LVAL_LAMBDA:
+        case LVAL_FUNCTION:
             return lvalue_eq(x->val.fun->formals, y->val.fun->formals) &&
                  lvalue_eq(x->val.fun->body, y->val.fun->body);
         case LVAL_FILE:
@@ -543,8 +544,8 @@ char *ltype_name(enum ltype t) {
             return "string";
         case LVAL_BUILTIN:
             return "builtin";
-        case LVAL_LAMBDA:
-            return "lambda";
+        case LVAL_FUNCTION:
+            return "function";
         case LVAL_FLOAT:
             return "float";
         case LVAL_BOOL:
@@ -742,7 +743,7 @@ struct lvalue *lvalue_eval_sexpr(struct lenvironment *e, struct lvalue *v) {
     char *type_name = NULL;
 
     switch ( operator->type ) {
-        case LVAL_LAMBDA:
+        case LVAL_FUNCTION:
         case LVAL_BUILTIN:
             res = lvalue_call(e, operator, v);
             break;

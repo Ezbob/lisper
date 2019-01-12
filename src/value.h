@@ -12,7 +12,7 @@ enum ltype {
     LVAL_SEXPR,
     LVAL_QEXPR,
     LVAL_BUILTIN,
-    LVAL_LAMBDA,
+    LVAL_FUNCTION,
     LVAL_FILE,
     LVAL_BOOL,
     LVAL_STR
@@ -27,6 +27,7 @@ struct lcells {
 };
 
 struct lfunction {
+    char *name;
     struct lenvironment *env;
     struct lvalue *formals;
     struct lvalue *body;

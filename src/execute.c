@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include "execute.h"
 #include "grammar.h"
-#include "lvalue.h"
-#include "lenvironment.h"
+#include "value.h"
+#include "environment.h"
 #include "builtin.h"
 #include "lisper.h"
 

@@ -3,8 +3,8 @@
 #include <signal.h>
 #include "lisper.h"
 #include "grammar.h"
-#include "lenvironment.h"
-#include "lvalue.h"
+#include "environment.h"
+#include "value.h"
 #include "builtin.h"
 #include "execute.h"
 #include "mempool.h"

@@ -1,7 +1,7 @@
 #ifndef LISPER_LENV
 #define LISPER_LENV
 
-#include "lvalue.h"
+#include "value.h"
 #include <stdlib.h>
 
 struct lenvironment_entry {

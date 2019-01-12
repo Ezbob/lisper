@@ -1,8 +1,8 @@
-#include "lenvironment.h"
+#include "environment.h"
 #include <stdlib.h>
 #include <string.h>
 #include "builtin.h"
-#include "lvalue.h"
+#include "value.h"
 
 size_t lenvironment_hash(size_t capacity, char *key) {
     size_t i;
