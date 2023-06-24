@@ -199,7 +199,7 @@ void lenvironment_def(struct lenvironment *e, struct lvalue *k, struct lvalue *v
 void lenvironment_pretty_print(struct lenvironment *e) {
     for ( size_t i = 0; i < e->capacity; ++i ) {
         if ( e->entries[i] != NULL ) {
-            printf("i: %lu    (n: '%s' t: '%s' p: %p)", i, e->entries[i]->name, ltype_name(e->entries[i]->envval->type), (void *) (e->entries[i]->envval));
+            printf("i: %zu    (n: '%s' t: '%s' p: %p)", i, e->entries[i]->name, ltype_name(e->entries[i]->envval->type), (void *) (e->entries[i]->envval));
             struct lenvironment_entry *iter = e->entries[i]->next;
             while ( iter != NULL ) {
                 printf("-o-(n: '%s' t: '%s' p: %p)", iter->name, ltype_name(iter->envval->type), (void *) iter->envval);
