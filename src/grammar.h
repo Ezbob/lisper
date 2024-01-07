@@ -14,7 +14,7 @@ struct grammar_elems {
     mpc_parser_t* Sexpr;
     mpc_parser_t* Expr;
     mpc_parser_t* Lisper;
-} grammar_elems;
+};
 
 void grammar_elems_init(struct grammar_elems *);
 void grammar_elems_destroy(struct grammar_elems *);
