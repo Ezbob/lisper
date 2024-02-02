@@ -26,6 +26,8 @@ target_sources(lisper
 set_property(TARGET lisper PROPERTY C_STANDARD 17)
 set_property(TARGET lisper PROPERTY C_STANDARD_REQUIRED ON)
 
+target_compile_options(lisper PRIVATE $<$<C_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>)
+
 if (${CMAKE_HOST_LINUX})
   find_library(MATH_LIBRARY m)
   target_link_libraries(lisper PRIVATE ${libedit_LIBRARIES} ${MATH_LIBRARY})

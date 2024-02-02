@@ -4,8 +4,8 @@
 #include <stdlib.h>
 
 struct mempool {
-    char *memspace; /* pointer to byte-sized array that contains all the blocks */
-    char **free; /* free list pointer. Points either to the next free block
+    unsigned char *memspace; /* pointer to byte-sized array that contains all the blocks */
+    unsigned char **free; /* free list pointer. Points either to the next free block
         or null if no more blocks are free*/
     size_t itemsize; /* byte size of the indiviual types contained in a block */
     size_t capacity; /* byte capacity of the mempool */

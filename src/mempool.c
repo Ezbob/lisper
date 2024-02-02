@@ -14,7 +14,8 @@ struct mempool *mempool_init(size_t itemsize, size_t poolsize) {
     if ( mp == NULL ) {
         return NULL;
     }
-    size_t blocksize = itemsize + sizeof(char *);
+    size_t pointersize = sizeof(unsigned char *);
+    size_t blocksize = (((itemsize / pointersize) + 1) * pointersize) + pointersize;
     mp->capacity = poolsize * blocksize;
     mp->itemsize = itemsize;
     mp->memspace = malloc(mp->capacity);
@@ -22,14 +23,14 @@ struct mempool *mempool_init(size_t itemsize, size_t poolsize) {
         return NULL;
     }
     mp->next = NULL;
-    mp->free = (char **) (mp->memspace);
+    mp->free = (unsigned char **) (mp->memspace);
     mp->takencount = 0;
 
-    char **iter = mp->free;
+    unsigned char **iter = mp->free;
     for ( size_t i = 1; i < poolsize; ++i ) {
         void *next = (mp->memspace + i * blocksize);
         *iter = next; // make current free pointer point to start of next block
-        iter = (char **) next; // advance to next free pointer
+        iter = (unsigned char **) next; // advance to next free pointer
     }
     *iter = NULL;
 
@@ -56,7 +57,7 @@ void mempool_del(struct mempool *mp) {
  */
 void *mempool_take(struct mempool *mp) {
     if ( mp->free != NULL ) {
-        char **head = mp->free;
+        unsigned char **head = mp->free;
         void *res = (void *) (head + 1); // actual memory is next to free pointer
         mp->takencount++;
         mp->free = (void *) *head;
@@ -73,7 +74,7 @@ void *mempool_take(struct mempool *mp) {
         iter = iter->next;
     }
 
-    char **head = iter->free;
+    unsigned char **head = iter->free;
     void *res = (void *) (head + 1);
     iter->takencount++;
     iter->free = (void *) *head;
@@ -84,7 +85,7 @@ void *mempool_take(struct mempool *mp) {
  * Check if memory is in pool
  */
 int mempool_hasaddr(struct mempool *mp, void *mem) {
-    return mp->memspace <= ((char *) mem) && (mp->memspace + mp->capacity) > ((char *) mem);
+    return mp->memspace <= ((unsigned char *) mem) && (mp->memspace + mp->capacity) > ((unsigned char *) mem);
 }
 
 /*
@@ -97,7 +98,7 @@ int mempool_recycle(struct mempool *mp, void *mem) {
         iter = iter->next;
     }
     if ( iter ) {
-        char **header = ( (char **) mem ) - 1; // next free pointer is to the left of the data
+        unsigned char **header = ( (unsigned char **) mem ) - 1; // next free pointer is to the left of the data
         *header = (void *) iter->free;
         iter->takencount--;
         iter->free = header;
