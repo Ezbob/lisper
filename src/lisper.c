@@ -64,12 +64,15 @@ int main(int argc, char **argv) {
         exit_with_help(1);
     }
 
+    int rc = 0;
     if ( params.filename != NULL ) {        
-        exec_filein(env, &params);
+       rc = exec_filein(env, &params);
+    } else if ( params.command != NULL ) {
+       rc = exec_eval(env, &elems, &params);
     } else {
-        exec_repl(env, &elems);
+       rc = exec_repl(env, &elems);
     }
 
-    return EXIT_SUCCESS;
+    return rc;
 }
 

@@ -3,6 +3,7 @@
 
 struct lisper_params {
     char *filename;
+    char *command;
     int help;
     int version;
     int arg_count;

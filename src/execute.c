@@ -41,8 +41,9 @@ void goodbye_exit(void) {
     putchar('\n');
 }
 
-void exec_repl(struct lenvironment *env, struct grammar_elems *elems) {
-    char *input;
+int exec_repl(struct lenvironment *env, struct grammar_elems *elems) {
+    char *input = NULL;
+    int rc = 0;
     printf("lisper version %s\n", LISPER_VERSION);
     printf("Anders Busch 2018\n");
     puts("Press Ctrl+c to Exit\n");
@@ -82,18 +83,51 @@ void exec_repl(struct lenvironment *env, struct grammar_elems *elems) {
         } else {
             mpc_err_print(r.error);
             mpc_err_delete(r.error);
+            rc = 1;
         }
         free(input); 
     }
+    return rc;
 }
 
 
-void exec_filein(struct lenvironment *env, struct lisper_params *params) {
+int exec_filein(struct lenvironment *env, struct lisper_params *params) {
+    int rc = 0;
     struct lvalue *args = lvalue_add(lvalue_sexpr(), lvalue_str(params->filename));
     struct lvalue *x = builtin_load(env, args);
     if ( x->type == LVAL_ERR ) {
         lvalue_println(x);
+        rc = 1;
     }
     lvalue_del(x);
+    return rc;
 }
 
+int exec_eval(struct lenvironment *env,struct grammar_elems *elems, struct lisper_params *params) {
+    int rc = 0;
+    mpc_result_t r;
+    if ( mpc_parse("<stdin>", params->command, elems->Lisper, &r) ) {
+        struct lvalue *read = lvalue_read(r.output);
+#ifdef _DEBUG
+        printf("Parsed input:\n");
+        mpc_ast_print(r.output);
+        printf("Lval object:\n");
+        lvalue_pretty_print(read);
+        printf("Current env:\n");
+        lenvironment_pretty_print(env);
+        printf("Eval result:\n");
+#endif
+        struct lvalue *val = lvalue_eval(env, read);
+        lvalue_println(val);
+        if (val->type == LVAL_ERR) {
+            rc = 1;
+        }
+        lvalue_del(val);
+        mpc_ast_delete(r.output);
+    } else {
+        mpc_err_print(r.error);
+        mpc_err_delete(r.error);
+        rc = 1;
+    }
+    return rc;
+}

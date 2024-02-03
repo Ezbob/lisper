@@ -12,6 +12,7 @@ void exit_with_help(int exit_code) {
             "OPTIONs available:\n"
             "  -v, --version            show version infomation and exit\n"
             "  -h, --help               show this message and exit\n"
+            "  -c <COMMAND>             run <COMMAND> and exit\n"
             "\n"
             "Lisper online source code repository: <https://www.github.com/Ezbob/lisper>\n"
             "Licensed under the very permissive MIT license\n" 
@@ -22,6 +23,7 @@ void exit_with_help(int exit_code) {
 int parse_prg_params(int argc, char **argv, struct lisper_params *params) {
     
     char *filename = NULL;
+    char *command = NULL;
     int version = 0;
     int help = 0;
     int followed_by_optional = 0; /* bool trigger for options that take arguments */
@@ -42,12 +44,24 @@ int parse_prg_params(int argc, char **argv, struct lisper_params *params) {
             } else if ( strcmp(current, "--version") == 0 || strcmp(current, "-v") == 0 ) {
                 version = 1;
                 arg_count++;
+            } else if ( strcmp(current, "-c") == 0 ) {
+                arg_count++;
+                if ((i + 1) >= argc) {
+                    return 1;
+                }
+                i += 1;
+                char *value = argv[i];
+                if (strlen(value) == 0) {
+                    return 1;
+                }
+                command = value;
             } else {
                 return 1;
             }
         }
     }
 
+    params->command = command;
     params->filename = filename;
     params->version = version;
     params->help = help;
