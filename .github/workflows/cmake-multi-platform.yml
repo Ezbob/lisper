@@ -52,7 +52,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Setup apt
+    - name: Setup system dependencies
       shell: bash
       run: |
          if [ "$RUNNER_OS" == "Linux" ]; then
