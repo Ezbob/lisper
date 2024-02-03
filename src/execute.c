@@ -24,13 +24,17 @@ char *readline(char *prompt) {
 
 void add_history(char* unused) {}
 
-#elif _ARCHLINUX
+#elif defined(_ARCHLINUX)
 /* arch linux support */
 #include <histedit.h>
 #include <editline/readline.h>
 
+#elif defined(__MARCH__) || defined(__APPLE__)
+/* MacOS support */
+#include <editline/readline.h>
+
 #else
-/* other linux / Mac support */
+/* other linux support */
 #include <editline/history.h>
 #include <editline/readline.h>
 
