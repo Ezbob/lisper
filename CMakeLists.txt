@@ -8,6 +8,10 @@ endif()
 
 project(lisper C)
 
+add_library(linenoise STATIC)
+target_sources(linenoise PRIVATE linenoise/linenoise.c)
+target_include_directories(linenoise PUBLIC linenoise)
+
 add_executable(lisper "")
 
 target_sources(lisper
@@ -28,9 +32,6 @@ set_property(TARGET lisper PROPERTY C_STANDARD_REQUIRED ON)
 
 target_compile_options(lisper PRIVATE $<$<OR:$<C_COMPILER_ID:GNU>,$<C_COMPILER_ID:CLANG>>:-Wall -Wextra -Wpedantic>)
 
-if (CMAKE_HOST_LINUX)
-  find_library(MATH_LIBRARY m)
-  target_link_libraries(lisper PRIVATE ${libedit_LIBRARIES} ${MATH_LIBRARY})
-elseif (CMAKE_HOST_APPLE)
-  target_link_libraries(lisper PRIVATE -ledit)
-endif()
+find_library(MATH_LIBRARY m)
+target_link_libraries(lisper PRIVATE ${MATH_LIBRARY} linenoise)
+

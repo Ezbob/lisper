@@ -6,42 +6,10 @@
 #include "environment.h"
 #include "builtin.h"
 #include "lisper.h"
-
-#ifdef _WIN32
-#include <string.h>
-/* windows support */
-static char buf[2048];
-
-char *readline(char *prompt) {
-    fputs(prompt, stdout);
-    fgets(buf, 2048, stdin);
-    char *cpy = malloc(strlen(buf) + 1);
-    strcpy(cpy, buf);
-
-    cpy[strlen(cpy) - 1] = '\0';
-    return cpy;
-}
-
-void add_history(char* unused) {}
-
-#elif defined(_ARCHLINUX)
-/* arch linux support */
-#include <histedit.h>
-#include <editline/readline.h>
-
-#elif defined(__MARCH__) || defined(__APPLE__)
-/* MacOS support */
-#include <editline/readline.h>
-
-#else
-/* other linux support */
-#include <editline/history.h>
-#include <editline/readline.h>
-
-#endif
+#include "linenoise.h"
 
 void goodbye_exit(void) {
-    printf("\nBye.");
+    printf("Bye.");
     putchar('\n');
 }
 
@@ -61,13 +29,15 @@ int exec_repl(struct lenvironment *env, struct grammar_elems *elems) {
     lenvironment_pretty_print(env);
 #endif
     while ( 1 ) {
-        input = readline("lisper>>> ");
+        input = linenoise("lisper>>> ");
         if (input == NULL) {
-            putchar('\n');
+            break;
+        } else if (strlen(input) == 0) {
+            free(input);
             continue;
         }
 
-        add_history(input);
+        linenoiseHistoryAdd(input);
 
         if ( mpc_parse("<stdin>", input, elems->Lisper, &r) ) {
             struct lvalue *read = lvalue_read(r.output);
