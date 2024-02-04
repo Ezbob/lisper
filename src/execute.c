@@ -6,7 +6,27 @@
 #include "environment.h"
 #include "builtin.h"
 #include "lisper.h"
+
+#ifdef _WIN32
+#include <string.h>
+/* windows support */
+static char buf[2048];
+
+char *linenoise(char *prompt) {
+    fputs(prompt, stdout);
+    fgets(buf, 2048, stdin);
+    char *cpy = malloc(strlen(buf) + 1);
+    strcpy(cpy, buf);
+
+    cpy[strlen(cpy) - 1] = '\0';
+    return cpy;
+}
+
+void linenoiseHistoryAdd(char* unused) {}
+
+#else
 #include "linenoise.h"
+#endif
 
 void goodbye_exit(void) {
     printf("Bye.");
