@@ -2,10 +2,6 @@ cmake_minimum_required(VERSION 3.25)
 
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-if (CMAKE_HOST_LINUX)
-  find_package(LibEdit REQUIRED)
-endif()
-
 project(lisper C)
 
 add_executable(lisper "")
@@ -30,7 +26,14 @@ target_compile_options(lisper PRIVATE $<$<OR:$<C_COMPILER_ID:GNU>,$<C_COMPILER_I
 
 if (CMAKE_HOST_LINUX)
   find_library(MATH_LIBRARY m)
-  target_link_libraries(lisper PRIVATE ${libedit_LIBRARIES} ${MATH_LIBRARY})
-elseif (CMAKE_HOST_APPLE)
-  target_link_libraries(lisper PRIVATE -ledit)
+  target_link_libraries(lisper PRIVATE ${MATH_LIBRARY})
+endif()
+
+if (NOT CMAKE_HOST_WIN32)
+  # do not add linenoise on windows
+  add_library(linenoise STATIC)
+  target_sources(linenoise PRIVATE linenoise/linenoise.c)
+  target_include_directories(linenoise PUBLIC linenoise)
+
+  target_link_libraries(lisper PRIVATE linenoise)
 endif()
