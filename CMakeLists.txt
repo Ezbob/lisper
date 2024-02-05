@@ -4,9 +4,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 project(lisper C)
 
-add_library(linenoise STATIC)
-target_sources(linenoise PRIVATE linenoise/linenoise.c)
-target_include_directories(linenoise PUBLIC linenoise)
+add_subdirectory(lib/linenoise)
 
 add_executable(lisper "")
 
@@ -33,4 +31,4 @@ find_library(MATH_LIBRARY m)
 target_link_libraries(lisper PRIVATE ${MATH_LIBRARY})
 endif()
 
-target_link_libraries(lisper PRIVATE linenoise)
+target_link_libraries(lisper PRIVATE linenoise_static)
