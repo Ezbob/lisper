@@ -4,6 +4,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 project(lisper C)
 
+
 add_executable(lisper "")
 
 target_sources(lisper
@@ -31,9 +32,6 @@ endif()
 
 if (NOT CMAKE_HOST_WIN32)
   # do not add linenoise on windows
-  add_library(linenoise STATIC)
-  target_sources(linenoise PRIVATE linenoise/linenoise.c)
-  target_include_directories(linenoise PUBLIC linenoise)
-
-  target_link_libraries(lisper PRIVATE linenoise)
+  add_subdirectory(lib/linenoise)
+  target_link_libraries(lisper PRIVATE linenoise_static)
 endif()
