@@ -4,7 +4,6 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 project(lisper C)
 
-add_subdirectory(lib/linenoise)
 
 add_executable(lisper "")
 
@@ -27,8 +26,12 @@ set_property(TARGET lisper PROPERTY C_STANDARD_REQUIRED ON)
 target_compile_options(lisper PRIVATE $<$<OR:$<C_COMPILER_ID:GNU>,$<C_COMPILER_ID:CLANG>>:-Wall -Wextra -Wpedantic>)
 
 if (CMAKE_HOST_LINUX)
-find_library(MATH_LIBRARY m)
-target_link_libraries(lisper PRIVATE ${MATH_LIBRARY})
+  find_library(MATH_LIBRARY m)
+  target_link_libraries(lisper PRIVATE ${MATH_LIBRARY})
 endif()
 
-target_link_libraries(lisper PRIVATE linenoise_static)
+if (NOT CMAKE_HOST_WIN32)
+  # do not add linenoise on windows
+  add_subdirectory(lib/linenoise)
+  target_link_libraries(lisper PRIVATE linenoise_static)
+endif()
