@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 
     signal(SIGINT, signal_handler);
     atexit(exit_handler);
-    
+
     if ( parse_prg_params(argc, argv, &params) != 0 ) {
         fprintf(stderr, "Error: Couldn't parse lisper program arguments\n");
         exit_with_help(1);
@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
     }
 
     int rc = 0;
-    if ( params.filename != NULL ) {        
+    if ( params.filename != NULL ) {
        rc = exec_filein(env, &params);
     } else if ( params.command != NULL ) {
        rc = exec_eval(env, &elems, &params);

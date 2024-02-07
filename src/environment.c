@@ -3,6 +3,7 @@
 #include <string.h>
 #include "builtin.h"
 #include "value.h"
+#include "compat_string.h"
 
 size_t lenvironment_hash(size_t capacity, char *key) {
     size_t i;
@@ -109,42 +110,42 @@ struct lvalue *lenvironment_get(struct lenvironment *e, struct lvalue *k) {
     struct lenvironment_entry *entry = e->entries[i];
 
     if ( entry != NULL ) {
-        if ( strcmp(entry->name, k->val.strval) == 0 ) { 
-            return lvalue_copy(entry->envval); 
-        } 
+        if ( strcmp(entry->name, k->val.strval) == 0 ) {
+            return lvalue_copy(entry->envval);
+        }
         struct lenvironment_entry *entry_iter = entry->next;
-        /* go through the linked list */ 
-        while ( entry_iter != NULL ) { 
-            if ( strcmp(entry_iter->name, k->val.strval) == 0 ) { 
-                /* found in chain */ 
-                return lvalue_copy(entry_iter->envval); 
-            } 
-        } 
+        /* go through the linked list */
+        while ( entry_iter != NULL ) {
+            if ( strcmp(entry_iter->name, k->val.strval) == 0 ) {
+                /* found in chain */
+                return lvalue_copy(entry_iter->envval);
+            }
+        }
     } else if ( e->parent != NULL ) {
         for (
-            struct lenvironment *environment_iter = e->parent; 
+            struct lenvironment *environment_iter = e->parent;
             environment_iter != NULL;
             environment_iter = environment_iter->parent
         ) {
             i = lenvironment_hash(environment_iter->capacity, k->val.strval);
-            entry = environment_iter->entries[i];            
+            entry = environment_iter->entries[i];
             if ( entry != NULL ) {
                 break;
             }
         }
 
         if (entry != NULL) {
-            if ( strcmp(entry->name, k->val.strval) == 0 ) { 
-                return lvalue_copy(entry->envval); 
-            } 
+            if ( strcmp(entry->name, k->val.strval) == 0 ) {
+                return lvalue_copy(entry->envval);
+            }
             struct lenvironment_entry *entry_iter = entry->next;
-            /* go through the linked list */ 
-            while ( entry_iter != NULL ) { 
-                if ( strcmp(entry_iter->name, k->val.strval) == 0 ) { 
-                    /* found in chain */ 
-                    return lvalue_copy(entry_iter->envval); 
-                } 
-            } 
+            /* go through the linked list */
+            while ( entry_iter != NULL ) {
+                if ( strcmp(entry_iter->name, k->val.strval) == 0 ) {
+                    /* found in chain */
+                    return lvalue_copy(entry_iter->envval);
+                }
+            }
         }
     }
 
@@ -159,8 +160,7 @@ void lenvironment_put(struct lenvironment *e, struct lvalue *k, struct lvalue *v
         /* chain is empty */
         entry = lenvironment_entry_new();
         entry->envval = lvalue_copy(v);
-        entry->name = calloc(strlen(k->val.strval) + 1, sizeof(char));
-        strcpy(entry->name, k->val.strval);
+        entry->name = strdup(k->val.strval);
         e->entries[i] = entry;
     } else {
         /* chain is non-empty */
@@ -181,8 +181,7 @@ void lenvironment_put(struct lenvironment *e, struct lvalue *k, struct lvalue *v
         struct lenvironment_entry *old = entry;
         struct lenvironment_entry *new = lenvironment_entry_new();
         new->envval = lvalue_copy(v);
-        new->name = calloc(strlen(k->val.strval) + 1, sizeof(char));
-        strcpy(new->name, k->val.strval);
+        new->name = strdup(k->val.strval);
         new->next = old;
         e->entries[i] = new;
     }

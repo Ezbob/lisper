@@ -42,7 +42,7 @@ struct lvalue *lvalue_err(char *fmt, ...) {
     vsnprintf(val->val.strval, 511, fmt, va);
     val->val.strval = realloc(val->val.strval, strlen(val->val.strval) + 1);
 
-    va_end(va); 
+    va_end(va);
     return val;
 }
 
@@ -157,7 +157,7 @@ void lvalue_del(struct lvalue *val) {
 
 
 /**
- * Prints lvalue expressions (such as sexprs) given the prefix, 
+ * Prints lvalue expressions (such as sexprs) given the prefix,
  * suffix and delimiter
  */
 void lvalue_expr_print(struct lvalue *val, char prefix, char suffix, char delimiter) {
@@ -247,7 +247,7 @@ void lvalue_println(struct lvalue *val) {
     putchar('\n');
 }
 
-enum { 
+enum {
     LREAD_FLOAT = 0,
     LREAD_INT = 1
 };
@@ -284,7 +284,7 @@ struct lvalue *lvalue_add(struct lvalue *val, struct lvalue *other) {
     if ( resized_cells == NULL ) {
         lvalue_del(val);
         lvalue_del(other);
-        perror("Could not resize lvalue cell buffer"); 
+        perror("Could not resize lvalue cell buffer");
         exit(1);
     }
     resized_cells[val->val.l.count - 1] = other;
@@ -532,7 +532,7 @@ int lvalue_eq(struct lvalue *x, struct lvalue *y) {
 }
 
 /**
- * Given a lvalue type, return it's string representation 
+ * Given a lvalue type, return it's string representation
  */
 char *ltype_name(enum ltype t) {
     switch ( t ) {
@@ -563,10 +563,10 @@ char *ltype_name(enum ltype t) {
 }
 
 /**
- * Helper function for printing lvalue 
+ * Helper function for printing lvalue
  */
 void lvalue_depth_print(struct lvalue *v, size_t depth) {
-    
+
     for ( size_t i = 0; i < depth; ++i ) {
         putchar(' ');
     }
@@ -608,7 +608,7 @@ struct lvalue *lvalue_call(struct lenvironment *e, struct lvalue *f, struct lval
     size_t total = formals->val.l.count;
 
     while ( v->val.l.count > 0 ) {
- 
+
         if ( formals->val.l.count == 0 &&
             args[0]->type != LVAL_SEXPR ) {
             /* Error case: non-symbolic parameter parsed */
@@ -694,14 +694,14 @@ struct lvalue *lvalue_eval_sexpr(struct lenvironment *e, struct lvalue *v) {
 
     /*
      * Implicit qouting
-     * Intercept special sexpr to make symbols qouted 
+     * Intercept special sexpr to make symbols qouted
      */
     struct lvalue *first = v->val.l.cells[0];
     if ( first->type == LVAL_SYM && v->val.l.count > 1 ) {
         struct lvalue *sec = v->val.l.cells[1];
-        if ( 
+        if (
             (
-                strcmp(first->val.strval, "=") == 0    || 
+                strcmp(first->val.strval, "=") == 0    ||
                 strcmp(first->val.strval, "def") == 0  ||
                 strcmp(first->val.strval, "fn") == 0
             ) && sec->type == LVAL_SYM
@@ -712,7 +712,7 @@ struct lvalue *lvalue_eval_sexpr(struct lenvironment *e, struct lvalue *v) {
 
     /* Depth-first evaluation of sexpr arguments.
        This resolves the actual meaning of the sexpr, such that
-       what operator to apply to this sexpr is known, and if 
+       what operator to apply to this sexpr is known, and if
        there was any error executing nested sexpr etc...
      */
     for ( size_t i = 0; i < v->val.l.count; i++ ) {
@@ -736,7 +736,7 @@ struct lvalue *lvalue_eval_sexpr(struct lenvironment *e, struct lvalue *v) {
 
     /* Function evaluation.
        Take the first lvalue in the sexpression and apply it to the
-       following lvalue sequence 
+       following lvalue sequence
     */
     struct lvalue *operator = lvalue_pop(v, 0);
     struct lvalue *res = NULL;
@@ -751,7 +751,7 @@ struct lvalue *lvalue_eval_sexpr(struct lenvironment *e, struct lvalue *v) {
             type_name = ltype_name(operator->type);
             lvalue_del(operator);
             lvalue_del(v);
-            return lvalue_err("Expected first argument of %s to be of type '%s'; got '%s'.", 
+            return lvalue_err("Expected first argument of %s to be of type '%s'; got '%s'.",
                         ltype_name(LVAL_SEXPR), ltype_name(LVAL_BUILTIN), type_name);
     }
 
@@ -767,7 +767,7 @@ struct lvalue *lvalue_eval(struct lenvironment *e, struct lvalue *v) {
             /* Eval'ing symbols just looks up the symbol in the symbol table
                Discards the wrapping.
              */
-            x = lenvironment_get(e, v); 
+            x = lenvironment_get(e, v);
             lvalue_del(v);
             return x;
 
