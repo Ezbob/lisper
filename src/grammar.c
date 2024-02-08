@@ -30,7 +30,6 @@ void grammar_elems_destroy(struct grammar_elems *elems) {
 }
 
 void grammar_make_lang(struct grammar_elems *elems) {
-    
     mpca_lang(MPCA_LANG_DEFAULT,
         "string     : /\"(\\\\.|[^\"])*\"/ ;"
         "boolean    : \"true\" | \"false\" ;"
@@ -40,7 +39,7 @@ void grammar_make_lang(struct grammar_elems *elems) {
         "comment    : /;[^\\r\\n]*/ ;"
         "qexpr      : '{' <expr>* '}' ;"
         "sexpr      : '(' <expr>* ')' ;"
-        "expr       : <string> | <boolean> | <float> | <integer> | <symbol>" 
+        "expr       : <string> | <boolean> | <float> | <integer> | <symbol>"
                    "| <sexpr>  | <qexpr>   | <comment> ;"
         "lisper     : /^/ <expr>* /$/ ;",
         elems->Boolean,
@@ -51,7 +50,7 @@ void grammar_make_lang(struct grammar_elems *elems) {
         elems->Comment,
         elems->Qexpr,
         elems->Sexpr,
-        elems->Expr, 
+        elems->Expr,
         elems->Lisper
     );
 }

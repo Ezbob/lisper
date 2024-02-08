@@ -390,15 +390,16 @@ struct lvalue *lvalue_read(mpc_ast_t *t) {
     }
 
     for ( int i = 0; i < t->children_num; i++ ) {
-        if ( strcmp(t->children[i]->contents, "(") == 0 ||
-             strcmp(t->children[i]->contents, ")") == 0 ||
-             strcmp(t->children[i]->contents, "{") == 0 ||
-             strcmp(t->children[i]->contents, "}") == 0 ||
-             strcmp(t->children[i]->tag, "regex") == 0  ||
-             strstr(t->children[i]->tag, "comment") ) {
+        struct mpc_ast_t *child = t->children[i];
+        if ( strcmp(child->contents, "(") == 0 ||
+             strcmp(child->contents, ")") == 0 ||
+             strcmp(child->contents, "{") == 0 ||
+             strcmp(child->contents, "}") == 0 ||
+             strcmp(child->tag, "regex") == 0  ||
+             strstr(child->tag, "comment") ) {
             continue;
         }
-        val = lvalue_add(val, lvalue_read(t->children[i]));
+        val = lvalue_add(val, lvalue_read(child));
     }
 
     return val;
