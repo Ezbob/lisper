@@ -19,6 +19,9 @@ Symbolic expressions are automatically evaluated, depth-first, with the first sy
 
 Quoted expressions are not automatically evaluated. This makes them suitable to define lists containing data, function body declarations or constructs which requires evaluation at a later date.
 
+## Basic syntax
+
+
 ## Operators
 
 ### Arithmetic operators
@@ -36,5 +39,5 @@ This means that the result of the expression
 `(/ 100 2 3)` and
 `(/ (/ (/ 100 2) 3))` are both `16`.
 
-## Builtins
+## Built-in functions (Builtins)
 
