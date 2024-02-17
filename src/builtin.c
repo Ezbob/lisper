@@ -5,6 +5,8 @@
 #include "grammar.h"
 #include "value.h"
 #include "environment.h"
+#include "value/lvalue.h"
+#include "value/lfile.h"
 
 #define LGETCELL(v, celln) v->val.l.cells[celln]
 
@@ -380,7 +382,7 @@ struct lvalue *builtin_open(struct lenvironment *e, struct lvalue *v) {
 
     char *m = mode->val.strval;
     char *path = filename->val.strval;
-    FILE *fp;
+    FILE *fp = NULL;
 
     if ( !(strcmp(m, "r") == 0 ||
            strcmp(m, "r+") == 0 ||

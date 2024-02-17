@@ -4,6 +4,8 @@
 #include "builtin.h"
 #include "value.h"
 #include "compat_string.h"
+#include "value/lvalue.h"
+#include "value/constructors.h"
 
 size_t lenvironment_hash(size_t capacity, char *key) {
     size_t i;
@@ -57,21 +59,16 @@ struct lenvironment_entry *lenvironment_entry_copy(struct lenvironment_entry *e)
     return x;
 }
 
-struct lenvironment *lenvironment_new(size_t capacity) {
-    struct lenvironment *env = malloc(sizeof(struct lenvironment));
+void lenvironment_init(struct lenvironment *env, size_t capacity) {
     env->parent = NULL;
     env->entries = malloc(capacity * sizeof(struct lenvironment_entry *));
     env->capacity = capacity;
     for (size_t i = 0; i < capacity; ++i) {
         env->entries[i] = NULL;
     }
-    return env;
 }
 
-void lenvironment_del(struct lenvironment *env) {
-    if ( env == NULL ) {
-        return;
-    }
+void lenvironment_deinit(struct lenvironment *env) {
     env->parent = NULL;
     for ( size_t i = 0; i < env->capacity; ++i ) {
         if ( env->entries[i] != NULL ) {
@@ -79,6 +76,19 @@ void lenvironment_del(struct lenvironment *env) {
         }
     }
     free(env->entries);
+}
+
+struct lenvironment *lenvironment_new(size_t capacity) {
+    struct lenvironment *env = malloc(sizeof(struct lenvironment));
+    lenvironment_init(env, capacity);
+    return env;
+}
+
+void lenvironment_del(struct lenvironment *env) {
+    if ( env == NULL ) {
+        return;
+    }
+    lenvironment_deinit(env);
     free(env);
 }
 

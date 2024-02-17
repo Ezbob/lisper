@@ -17,6 +17,7 @@ struct lenvironment {
 };
 
 struct lenvironment *lenvironment_new(size_t cap);
+void lenvironment_init(struct lenvironment *env, size_t capacity);
 void lenvironment_del(struct lenvironment *);
 struct lenvironment *lenvironment_copy(struct lenvironment *);
 struct lvalue *lenvironment_get(struct lenvironment *, struct lvalue *);

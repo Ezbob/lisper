@@ -19,12 +19,18 @@ target_sources(lisper
     src/value.c
     src/prgparams.c
     src/compat_string.c
+    src/value/transformers.c
+    src/value/constructors.c
 )
 
 set_property(TARGET lisper PROPERTY C_STANDARD 17)
 set_property(TARGET lisper PROPERTY C_STANDARD_REQUIRED ON)
 
 target_compile_options(lisper PRIVATE $<$<OR:$<C_COMPILER_ID:GNU>,$<C_COMPILER_ID:CLANG>>:-Wall -Wextra -Wpedantic>)
+
+target_include_directories(lisper PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/src
+)
 
 include(CheckSymbolExists)
 check_symbol_exists(strdup "string.h" STRDUP_DEFINED)

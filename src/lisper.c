@@ -9,6 +9,7 @@
 #include "execute.h"
 #include "mempool.h"
 #include "prgparams.h"
+#include "value/lvalue.h"
 
 struct grammar_elems elems; /* grammar elems can be reused */
 struct lenvironment *env = NULL; /* Global environment */
@@ -44,7 +45,7 @@ int main(int argc, char **argv) {
 
     args = &capture;
 
-    lvalue_mp = mempool_init(sizeof(struct lvalue), lvalue_mempool_size);
+    lvalue_mp = mempool_new(sizeof(struct lvalue), lvalue_mempool_size);
     env = lenvironment_new(hash_size);
     register_builtins(env);
 

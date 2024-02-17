@@ -2,18 +2,7 @@
 #include <stdio.h>
 #include "mempool.h"
 
-/*
- * Constructor for the mempool.
- * The 'itemsize' size parameter is the size in bytes of the entities
- * that the mempool represents a pool of; and the 'cap' parameter is
- * the maximum number of such items that the pool is enable to supply
- * any consumers with.
- */
-struct mempool *mempool_init(size_t itemsize, size_t poolsize) {
-    struct mempool *mp = malloc(sizeof(struct mempool));
-    if ( mp == NULL ) {
-        return NULL;
-    }
+void mempool_init(struct mempool *mp, size_t itemsize, size_t poolsize) {
     size_t pointersize = sizeof(unsigned char *);
     size_t blocksize = (((itemsize / pointersize) + 1) * pointersize) + pointersize;
     mp->capacity = poolsize * blocksize;
@@ -33,6 +22,27 @@ struct mempool *mempool_init(size_t itemsize, size_t poolsize) {
         iter = (unsigned char **) next; // advance to next free pointer
     }
     *iter = NULL;
+}
+
+void mempool_deinit(struct mempool *mp) {
+    struct mempool *iter = mp;
+    free(iter->memspace);
+    struct mempool *next = iter->next;
+
+    while ( iter != NULL ) {
+        struct mempool *next = iter->next;
+        free(iter->memspace);
+        free(iter);
+        iter = next;
+    }
+}
+
+struct mempool *mempool_new(size_t itemsize, size_t poolsize) {
+    struct mempool *mp = malloc(sizeof(struct mempool));
+    if ( mp == NULL ) {
+        return NULL;
+    }
+    mempool_init(mp, itemsize, poolsize);
 
     return mp;
 }
@@ -70,7 +80,7 @@ void *mempool_take(struct mempool *mp) {
     }
 
     if ( iter->next == NULL && iter->free == NULL ) { // every pool on the chain is full
-        iter->next = mempool_init(mp->itemsize, mp->takencount);
+        iter->next = mempool_new(mp->itemsize, mp->takencount);
         iter = iter->next;
     }
 
