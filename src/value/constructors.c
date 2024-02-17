@@ -1,12 +1,14 @@
 #include "constructors.h"
-#include "lvalue.h"
-#include "lfunction.h"
-#include "lfile.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include "mempool.h"
 #include "environment.h"
+#include "lfile.h"
+#include "lfunction.h"
+#include "lvalue.h"
+#include "mempool.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 
 extern struct mempool *lvalue_mp;
 

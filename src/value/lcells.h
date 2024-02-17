@@ -5,7 +5,7 @@
 struct lvalue;
 
 struct lcells {
-  unsigned long long count;
+  int count;
   struct lvalue **cells;
 };
 

@@ -5,6 +5,8 @@
 #include "lisper.h"
 #include "value.h"
 #include "value/lvalue.h"
+#include "value/transformers.h"
+#include "value/constructors.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -23,7 +25,9 @@ char *linenoise(char *prompt) {
   return cpy;
 }
 
-void linenoiseHistoryAdd(char *unused) {}
+void linenoiseHistoryAdd(char *unused) {
+  (void)(unused);
+}
 
 #else
 #include "linenoise.h"

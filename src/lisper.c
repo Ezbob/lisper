@@ -1,79 +1,78 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
 #include "lisper.h"
-#include "grammar.h"
-#include "environment.h"
-#include "value.h"
 #include "builtin.h"
+#include "environment.h"
 #include "execute.h"
+#include "grammar.h"
 #include "mempool.h"
 #include "prgparams.h"
+#include "value.h"
 #include "value/lvalue.h"
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-struct grammar_elems elems; /* grammar elems can be reused */
+
+struct grammar_elems elems;      /* grammar elems can be reused */
 struct lenvironment *env = NULL; /* Global environment */
 const size_t hash_size = 500;
 struct mempool *lvalue_mp = NULL;
 const size_t lvalue_mempool_size = 10000;
 struct argument_capture *args;
 
-
 void signal_handler(int signum) {
-    /* clean-up has to handled by SIGINT handler since we have while (1) */
-    if ( signum == SIGINT ) {
-        exit(0);
-    } else {
-        grammar_elems_destroy(&elems);
-        lenvironment_del(env);
-    }
+  /* clean-up has to handled by SIGINT handler since we have while (1) */
+  if (signum == SIGINT) {
+    exit(0);
+  } else {
+    grammar_elems_destroy(&elems);
+    lenvironment_del(env);
+  }
 }
 
 void exit_handler(void) {
-    grammar_elems_destroy(&elems);
-    lenvironment_del(env);
-    mempool_del(lvalue_mp);
+  grammar_elems_destroy(&elems);
+  lenvironment_del(env);
+  mempool_del(lvalue_mp);
 }
 
 int main(int argc, char **argv) {
 
-    struct argument_capture capture;
-    struct lisper_params params;
+  struct argument_capture capture;
+  struct lisper_params params;
 
-    capture.argc = argc;
-    capture.argv = argv;
+  capture.argc = argc;
+  capture.argv = argv;
 
-    args = &capture;
+  args = &capture;
 
-    lvalue_mp = mempool_new(sizeof(struct lvalue), lvalue_mempool_size);
-    env = lenvironment_new(hash_size);
-    register_builtins(env);
+  lvalue_mp = mempool_new(sizeof(struct lvalue), lvalue_mempool_size);
+  env = lenvironment_new(hash_size);
+  register_builtins(env);
 
-    grammar_elems_init(&elems);
-    grammar_make_lang(&elems);
+  grammar_elems_init(&elems);
+  grammar_make_lang(&elems);
 
-    signal(SIGINT, signal_handler);
-    atexit(exit_handler);
+  signal(SIGINT, signal_handler);
+  atexit(exit_handler);
 
-    if ( parse_prg_params(argc, argv, &params) != 0 ) {
-        fprintf(stderr, "Error: Couldn't parse lisper program arguments\n");
-        exit_with_help(1);
-    }
+  if (parse_prg_params(argc, argv, &params) != 0) {
+    fprintf(stderr, "Error: Couldn't parse lisper program arguments\n");
+    exit_with_help(1);
+  }
 
-    if ( handle_prg_params(&params) != 0 ) {
-        fprintf(stderr, "Error: Encountered error in handling lisper arguments\n");
-        exit_with_help(1);
-    }
+  if (handle_prg_params(&params) != 0) {
+    fprintf(stderr, "Error: Encountered error in handling lisper arguments\n");
+    exit_with_help(1);
+  }
 
-    int rc = 0;
-    if ( params.filename != NULL ) {
-       rc = exec_filein(env, &params);
-    } else if ( params.command != NULL ) {
-       rc = exec_eval(env, &elems, &params);
-    } else {
-       rc = exec_repl(env, &elems);
-    }
+  int rc = 0;
+  if (params.filename != NULL) {
+    rc = exec_filein(env, &params);
+  } else if (params.command != NULL) {
+    rc = exec_eval(env, &elems, &params);
+  } else {
+    rc = exec_repl(env, &elems);
+  }
 
-    return rc;
+  return rc;
 }
-

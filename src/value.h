@@ -11,8 +11,7 @@ void lvalue_print(struct lvalue *);
 void lvalue_println(struct lvalue *);
 void lvalue_del(struct lvalue *);
 
-char *ltype_name(enum ltype);
+char *ltype_name(int);
 void lvalue_pretty_print(struct lvalue *);
 
 #endif
-

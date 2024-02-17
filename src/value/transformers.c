@@ -7,7 +7,11 @@
 #include "lvalue.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include "mempool.h"
 
+struct lvalue *builtin_list(struct lenvironment *, struct lvalue *);
+struct lvalue *builtin_eval(struct lenvironment *, struct lvalue *);
 
 extern struct mempool *lvalue_mp;
 
@@ -111,7 +115,7 @@ struct lvalue *lvalue_take(struct lvalue *v, int i) {
  * Create a copy of the input lvalue
  */
 struct lvalue *lvalue_copy(struct lvalue *v) {
-  
+
   struct lvalue *x = mempool_take(lvalue_mp);
   x->type = v->type;
   struct lvalue *p;
@@ -286,6 +290,8 @@ struct lvalue *lvalue_call(struct lenvironment *e, struct lvalue *f, struct lval
   return lvalue_copy(f);
 }
 
+struct lvalue *lvalue_eval_sexpr(struct lenvironment *e, struct lvalue *v);
+
 struct lvalue *lvalue_eval(struct lenvironment *e, struct lvalue *v) {
 
   struct lvalue *x;
@@ -306,4 +312,73 @@ struct lvalue *lvalue_eval(struct lenvironment *e, struct lvalue *v) {
   }
 
   return v;
+}
+
+struct lvalue *lvalue_eval_sexpr(struct lenvironment *e, struct lvalue *v) {
+  /* empty sexpr */
+  if (v->val.l.count == 0) {
+    return v;
+  }
+
+  /*
+   * Implicit qouting
+   * Intercept special sexpr to make symbols qouted
+   */
+  struct lvalue *first = v->val.l.cells[0];
+  if (first->type == LVAL_SYM && v->val.l.count > 1) {
+    struct lvalue *sec = v->val.l.cells[1];
+    if ((strcmp(first->val.strval, "=") == 0 || strcmp(first->val.strval, "def") == 0 ||
+         strcmp(first->val.strval, "fn") == 0) &&
+        sec->type == LVAL_SYM) {
+      v->val.l.cells[1] = lvalue_add(lvalue_qexpr(), sec);
+    }
+  }
+
+  /* Depth-first evaluation of sexpr arguments.
+      This resolves the actual meaning of the sexpr, such that
+      what operator to apply to this sexpr is known, and if
+      there was any error executing nested sexpr etc...
+    */
+  for (int i = 0; i < v->val.l.count; i++) {
+    v->val.l.cells[i] = lvalue_eval(e, v->val.l.cells[i]);
+  }
+
+  /* Hoist first lvalue if only one is available.
+      This helps to sub results of sexprs, but
+      the sub lval.has to be evaluated first.
+    */
+  if (v->val.l.count == 1) {
+    return lvalue_take(v, 0);
+  }
+
+  /* Return first error (if any) */
+  for (int i = 0; i < v->val.l.count; i++) {
+    if (v->val.l.cells[i]->type == LVAL_ERR) {
+      return lvalue_take(v, i);
+    }
+  }
+
+  /* Function evaluation.
+      Take the first lvalue in the sexpression and apply it to the
+      following lvalue sequence
+  */
+  struct lvalue *operator= lvalue_pop(v, 0);
+  struct lvalue *res = NULL;
+  char *type_name = NULL;
+
+  switch (operator->type) {
+  case LVAL_FUNCTION:
+  case LVAL_BUILTIN:
+    res = lvalue_call(e, operator, v);
+    break;
+  default:
+    type_name = ltype_name(operator->type);
+    lvalue_del(operator);
+    lvalue_del(v);
+    return lvalue_err("Expected first argument of %s to be of type '%s'; got '%s'.",
+                      ltype_name(LVAL_SEXPR), ltype_name(LVAL_BUILTIN), type_name);
+  }
+
+  lvalue_del(operator);
+  return res;
 }
