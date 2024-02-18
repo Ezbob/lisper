@@ -2,14 +2,15 @@
 #include "environment.h"
 #include "grammar.h"
 #include "lisper.h"
-#include "value.h"
 #include "value/constructors.h"
 #include "value/lfile.h"
 #include "value/lvalue.h"
 #include "value/transformers.h"
+#include "value/print.h"
+#include "environment.h"
+#include "interpreter.h"
 #include <math.h>
 #include <stdlib.h>
-
 
 #define LGETCELL(v, celln) v->val.l.cells[celln]
 

@@ -5,7 +5,6 @@
 #include "grammar.h"
 #include "mempool.h"
 #include "prgparams.h"
-#include "value.h"
 #include "value/lvalue.h"
 #include <signal.h>
 #include <stdio.h>

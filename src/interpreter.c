@@ -1,9 +1,10 @@
 #include "interpreter.h"
 #include "builtin.h"
-#include "value.h"
 #include "value/lvalue.h"
+#include "value/constructors.h"
 #include "value/transformers.h"
 #include "environment.h"
+#include "interpreter.h"
 
 int linterpreter_init(struct linterpreter *intp, int argc, char **argv) {
   intp->halt_type = LINTERP_NO_HALT;

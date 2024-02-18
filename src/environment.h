@@ -1,10 +1,10 @@
 #ifndef LISPER_LENV
 #define LISPER_LENV
 
-#include "value.h"
 #include <stdlib.h>
 #include "mempool.h"
 
+struct lvalue;
 struct linterpreter;
 
 typedef struct lvalue *(*builtin_func_ptr)(struct linterpreter *, struct lvalue *);

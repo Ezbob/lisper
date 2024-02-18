@@ -5,8 +5,9 @@
 #include "environment.h"
 #include "grammar.h"
 #include "mempool.h"
-#include "value.h"
 #include <stdint.h>
+
+struct lvalue;
 
 struct linterpreter {
   struct lenvironment env;

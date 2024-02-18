@@ -3,10 +3,11 @@
 #include "environment.h"
 #include "grammar.h"
 #include "lisper.h"
-#include "value.h"
 #include "value/lvalue.h"
+#include "value/print.h"
 #include "value/transformers.h"
 #include "value/constructors.h"
+#include "interpreter.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "mempool.h"

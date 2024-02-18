@@ -1,10 +1,11 @@
 #include "environment.h"
 #include "builtin.h"
 #include "compat/string.h"
-#include "value.h"
 #include "value/constructors.h"
 #include "value/transformers.h"
 #include "value/lvalue.h"
+#include "interpreter.h"
+#include "value/print.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

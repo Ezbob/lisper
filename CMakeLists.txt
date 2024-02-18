@@ -16,10 +16,10 @@ target_sources(lisper
     src/lisper.c
     src/mempool.c
     src/mpc.c
-    src/value.c
     src/prgparams.c
     src/value/transformers.c
     src/value/constructors.c
+    src/value/print.c
     src/compat/string.c
     src/interpreter.c
 )
