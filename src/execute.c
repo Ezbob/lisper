@@ -81,6 +81,9 @@ int exec_repl(struct linterpreter *intp) {
       printf("Eval result:\n");
 #endif
       val = lvalue_eval(intp, read);
+      if (intp->halt_type == LINTERP_USER_EXIT) {
+        return intp->halt_value.rc;
+      }
       lvalue_println(val);
       lvalue_del(&intp->lvalue_mp, val);
       mpc_ast_delete(r.output);
@@ -122,6 +125,9 @@ int exec_eval(struct linterpreter *intp,
     printf("Eval result:\n");
 #endif
     struct lvalue *val = lvalue_eval(intp, read);
+    if (intp->halt_type == LINTERP_USER_EXIT) {
+      return intp->halt_value.rc;
+    }
     lvalue_println(val);
     if (val->type == LVAL_ERR) {
       rc = 1;

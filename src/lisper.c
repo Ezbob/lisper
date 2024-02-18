@@ -12,8 +12,6 @@
 #include <stdlib.h>
 #include "interpreter.h"
 
-struct argument_capture *args;
-
 /*
 void signal_handler(int signum) {
   if (signum == SIGINT) {
@@ -24,38 +22,20 @@ void signal_handler(int signum) {
   }
 }
 
-void exit_handler(void) {
-  grammar_elems_destroy(&elems);
-  lenvironment_del(env);
-  mempool_del(lvalue_mp);
-}
 */
 
 int main(int argc, char **argv) {
 
-  struct argument_capture capture;
   struct lisper_params params;
 
   struct linterpreter interpreter;
 
-  if (linterpreter_init(&interpreter) == -1) {
+  if (linterpreter_init(&interpreter, argc, argv) == -1) {
     return 1;
   }
 
-  capture.argc = argc;
-  capture.argv = argv;
-
-  args = &capture;
-
 /*
-  lvalue_mp = mempool_new(sizeof(struct lvalue), lvalue_mempool_size);
 
-  env = lenvironment_new(hash_size);
-
-  register_builtins(env);
-
-  grammar_elems_init(&elems);
-  grammar_make_lang(&elems);
 
   signal(SIGINT, signal_handler);
 

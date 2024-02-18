@@ -5,7 +5,12 @@
 #include "value/transformers.h"
 #include "environment.h"
 
-int linterpreter_init(struct linterpreter *intp) {
+int linterpreter_init(struct linterpreter *intp, int argc, char **argv) {
+  intp->halt_type = LINTERP_NO_HALT;
+  if (argv && argc >= 0) {
+    intp->argc = argc;
+    intp->argv = argv;
+  }
   if (lenvironment_init(&intp->lvalue_mp, &intp->env, 512) == -1) {
     return -1;
   }
@@ -15,7 +20,6 @@ int linterpreter_init(struct linterpreter *intp) {
   register_builtins(intp);
   grammar_elems_init(&intp->grammar);
   grammar_make_lang(&intp->grammar);
-  intp->error = NULL;
   return 0;
 }
 
@@ -23,8 +27,8 @@ void linterpreter_destroy(struct linterpreter *intp) {
   grammar_elems_destroy(&intp->grammar);
   lenvironment_deinit(&intp->lvalue_mp, &intp->env);
   mempool_deinit(&intp->lvalue_mp);
-  if (intp->error != NULL) {
-    mpc_err_delete(intp->error);
+  if (intp->halt_type == LINTERP_BAD_SYNTAX) {
+    mpc_err_delete(intp->halt_value.error);
   }
 }
 
@@ -44,9 +48,11 @@ int linterpreter_exec(struct linterpreter *intp, const char *exec, struct lvalue
     }
     mpc_ast_delete(r.output);
   } else {
-    intp->error = r.error;
-    if (out)
+    intp->halt_type = LINTERP_BAD_SYNTAX;
+    intp->halt_value.error = r.error;
+    if (out) {
       *out = NULL;
+    }
     rc = 1;
   }
   return rc;

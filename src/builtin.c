@@ -10,6 +10,7 @@
 #include <math.h>
 #include <stdlib.h>
 
+
 #define LGETCELL(v, celln) v->val.l.cells[celln]
 
 #define UNUSED(x) (void)(x)
@@ -75,8 +76,6 @@
               i + 1, ltype_name(expected_arg_type), ltype_name(curr->type));             \
     }                                                                                    \
   } while (0)
-
-extern struct argument_capture *args;
 
 /* env preallocated sizes */
 const size_t lambda_env_prealloc = 50;
@@ -376,9 +375,9 @@ struct lvalue *builtin_args(struct linterpreter *intp, struct lvalue *v) {
 
   struct lvalue *res = lvalue_qexpr(&intp->lvalue_mp);
   struct lvalue *arg;
-  int argc = args->argc;
+  int argc = intp->argc;
   for (int i = 0; i < argc; ++i) {
-    char *arg_str = args->argv[i];
+    char *arg_str = intp->argv[i];
     arg = lvalue_str(&intp->lvalue_mp, arg_str);
     lvalue_add(&intp->lvalue_mp, res, arg);
   }
@@ -690,7 +689,9 @@ struct lvalue *builtin_exit(struct linterpreter *intp, struct lvalue *v) {
 
   int exit_code = (int)(v->val.l.cells[0]->val.intval);
   lvalue_del(&intp->lvalue_mp, v);
-  exit(exit_code);
+
+  intp->halt_type = LINTERP_USER_EXIT;
+  intp->halt_value.rc = exit_code;
 
   return lvalue_sexpr(&intp->lvalue_mp);
 }

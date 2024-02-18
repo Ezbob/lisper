@@ -11,8 +11,8 @@
 #include "mempool.h"
 #include "interpreter.h"
 
-struct lvalue *builtin_list(struct mempool *, struct lenvironment *, struct lvalue *);
-struct lvalue *builtin_eval(struct mempool *, struct lenvironment *, struct lvalue *);
+struct lvalue *builtin_list(struct linterpreter *intp, struct lvalue *v);
+struct lvalue *builtin_eval(struct linterpreter *intp, struct lvalue *v);
 
 
 struct lvalue *lvalue_add(struct mempool *mp, struct lvalue *val, struct lvalue *other) {
@@ -211,10 +211,6 @@ int lvalue_eq(struct lvalue *x, struct lvalue *y) {
  * evaluate a function
  */
 struct lvalue *lvalue_call(struct linterpreter *intp, struct lvalue *f, struct lvalue *v) {
-  if (f->type == LVAL_BUILTIN) {
-    return f->val.builtin(intp, v);
-  }
-
   struct lfunction *func = f->val.fun;
   struct lvalue **args = v->val.l.cells;
   struct lvalue *formals = func->formals;
@@ -248,7 +244,7 @@ struct lvalue *lvalue_call(struct linterpreter *intp, struct lvalue *f, struct l
 
       /* Binding rest of the arguments to nsym */
       struct lvalue *nsym = lvalue_pop(&intp->lvalue_mp, formals, 0);
-      lenvironment_put(&intp->lvalue_mp, func->env, nsym, builtin_list(&intp->lvalue_mp, &intp->env, v));
+      lenvironment_put(&intp->lvalue_mp, func->env, nsym, builtin_list(intp, v));
       lvalue_del(&intp->lvalue_mp, sym);
       lvalue_del(&intp->lvalue_mp, nsym);
       break;
@@ -285,7 +281,7 @@ struct lvalue *lvalue_call(struct linterpreter *intp, struct lvalue *f, struct l
 
   if (formals->val.l.count == 0) {
     func->env->parent = &intp->env;
-    return builtin_eval(&intp->lvalue_mp, func->env, lvalue_add(&intp->lvalue_mp, lvalue_sexpr(&intp->lvalue_mp), lvalue_copy(&intp->lvalue_mp, func->body)));
+    return builtin_eval(intp, lvalue_add(&intp->lvalue_mp, lvalue_sexpr(&intp->lvalue_mp), lvalue_copy(&intp->lvalue_mp, func->body)));
   }
   return lvalue_copy(&intp->lvalue_mp, f);
 }
@@ -367,8 +363,10 @@ struct lvalue *lvalue_eval_sexpr(struct linterpreter *intp, struct lvalue *v) {
   char *type_name = NULL;
 
   switch (operator->type) {
-  case LVAL_FUNCTION:
   case LVAL_BUILTIN:
+    res = operator->val.builtin(intp, v);
+    break;
+  case LVAL_FUNCTION:
     res = lvalue_call(intp, operator, v);
     break;
   default:
