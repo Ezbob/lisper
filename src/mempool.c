@@ -10,7 +10,7 @@ int mempool_init(struct mempool *mp, size_t itemsize, size_t poolsize) {
   mp->itemsize = itemsize;
   mp->memspace = malloc(mp->capacity);
   if (mp->memspace == NULL) {
-    return 1;
+    return -1;
   }
   mp->next = NULL;
   mp->free = (unsigned char **)(mp->memspace);
@@ -29,6 +29,7 @@ int mempool_init(struct mempool *mp, size_t itemsize, size_t poolsize) {
 void mempool_deinit(struct mempool *mp) {
   struct mempool *iter = mp;
   free(iter->memspace);
+  iter = iter->next;
 
   while (iter != NULL) {
     struct mempool *next = iter->next;
@@ -43,8 +44,10 @@ struct mempool *mempool_new(size_t itemsize, size_t poolsize) {
   if (mp == NULL) {
     return NULL;
   }
-  mempool_init(mp, itemsize, poolsize);
-
+  if (mempool_init(mp, itemsize, poolsize) == -1) {
+    free(mp);
+    return NULL;
+  }
   return mp;
 }
 

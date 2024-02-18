@@ -9,19 +9,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include "mempool.h"
+#include "interpreter.h"
 
-struct lvalue *builtin_list(struct lenvironment *, struct lvalue *);
-struct lvalue *builtin_eval(struct lenvironment *, struct lvalue *);
+struct lvalue *builtin_list(struct mempool *, struct lenvironment *, struct lvalue *);
+struct lvalue *builtin_eval(struct mempool *, struct lenvironment *, struct lvalue *);
 
-extern struct mempool *lvalue_mp;
 
-struct lvalue *lvalue_add(struct lvalue *val, struct lvalue *other) {
+struct lvalue *lvalue_add(struct mempool *mp, struct lvalue *val, struct lvalue *other) {
   val->val.l.count++;
   struct lvalue **resized_cells =
       realloc(val->val.l.cells, val->val.l.count * sizeof(struct lvalue *));
   if (resized_cells == NULL) {
-    lvalue_del(val);
-    lvalue_del(other);
+    lvalue_del(mp, val);
+    lvalue_del(mp, other);
     perror("Could not resize lvalue cell buffer");
     exit(1);
   }
@@ -30,7 +30,7 @@ struct lvalue *lvalue_add(struct lvalue *val, struct lvalue *other) {
   return val;
 }
 
-struct lvalue *lvalue_offer(struct lvalue *val, struct lvalue *other) {
+struct lvalue *lvalue_offer(struct mempool *mp, struct lvalue *val, struct lvalue *other) {
   val->val.l.count++;
   struct lvalue **resized =
       realloc(val->val.l.cells, val->val.l.count * sizeof(struct lvalue *));
@@ -38,7 +38,7 @@ struct lvalue *lvalue_offer(struct lvalue *val, struct lvalue *other) {
 
   if (resized == NULL) {
     perror("Fatal memory error when trying reallocating for offer");
-    lvalue_del(val);
+    lvalue_del(mp, val);
     exit(1);
   }
   val->val.l.cells = resized;
@@ -53,30 +53,30 @@ struct lvalue *lvalue_offer(struct lvalue *val, struct lvalue *other) {
   return val;
 }
 
-struct lvalue *lvalue_join_str(struct lvalue *x, struct lvalue *y) {
+struct lvalue *lvalue_join_str(struct mempool *mp, struct lvalue *x, struct lvalue *y) {
   size_t cpy_start = strlen(x->val.strval);
   size_t total_size = cpy_start + strlen(y->val.strval);
 
   char *resized = realloc(x->val.strval, total_size + 1);
   if (resized == NULL) {
     perror("Fatal memory error when trying reallocating for join_str");
-    lvalue_del(x);
-    lvalue_del(y);
+    lvalue_del(mp, x);
+    lvalue_del(mp, y);
     exit(1);
   }
   x->val.strval = resized;
   strcpy(x->val.strval + cpy_start, y->val.strval);
 
-  lvalue_del(y);
+  lvalue_del(mp, y);
   return x;
 }
 
-struct lvalue *lvalue_join(struct lvalue *x, struct lvalue *y) {
+struct lvalue *lvalue_join(struct mempool *mp, struct lvalue *x, struct lvalue *y) {
   while (y->val.l.count) {
-    x = lvalue_add(x, lvalue_pop(y, 0));
+    x = lvalue_add(mp, x, lvalue_pop(mp, y, 0));
   }
 
-  lvalue_del(y);
+  lvalue_del(mp, y);
   return x;
 }
 
@@ -84,7 +84,7 @@ struct lvalue *lvalue_join(struct lvalue *x, struct lvalue *y) {
  * Pops the value of the input lvalue at index i,
  * and resizes the memory buffer
  */
-struct lvalue *lvalue_pop(struct lvalue *v, int i) {
+struct lvalue *lvalue_pop(struct mempool *mp, struct lvalue *v, int i) {
   struct lvalue *x = v->val.l.cells[i];
   memmove(v->val.l.cells + i, v->val.l.cells + (i + 1),
           sizeof(struct lvalue *) * (v->val.l.count - i - 1));
@@ -93,7 +93,7 @@ struct lvalue *lvalue_pop(struct lvalue *v, int i) {
   struct lvalue **cs = realloc(v->val.l.cells, v->val.l.count * sizeof(struct lvalue *));
   if (!cs && v->val.l.count > 0) {
     perror("Could not shrink cell buffer");
-    lvalue_del(v);
+    lvalue_del(mp, v);
     exit(1);
   }
   v->val.l.cells = cs;
@@ -105,18 +105,18 @@ struct lvalue *lvalue_pop(struct lvalue *v, int i) {
  * Pop the value off the input value at index i, and
  * delete the input value
  */
-struct lvalue *lvalue_take(struct lvalue *v, int i) {
-  struct lvalue *x = lvalue_pop(v, i);
-  lvalue_del(v);
+struct lvalue *lvalue_take(struct mempool *mp, struct lvalue *v, int i) {
+  struct lvalue *x = lvalue_pop(mp, v, i);
+  lvalue_del(mp, v);
   return x;
 }
 
 /**
  * Create a copy of the input lvalue
  */
-struct lvalue *lvalue_copy(struct lvalue *v) {
+struct lvalue *lvalue_copy(struct mempool *mp, struct lvalue *v) {
 
-  struct lvalue *x = mempool_take(lvalue_mp);
+  struct lvalue *x = mempool_take(mp);
   x->type = v->type;
   struct lvalue *p;
   FILE *fp;
@@ -125,8 +125,8 @@ struct lvalue *lvalue_copy(struct lvalue *v) {
   switch (v->type) {
   case LVAL_FUNCTION:
     x->val.fun =
-        lfunc_new(lenvironment_copy(v->val.fun->env), lvalue_copy(v->val.fun->formals),
-                  lvalue_copy(v->val.fun->body));
+        lfunc_new(lenvironment_copy(mp, v->val.fun->env), lvalue_copy(mp, v->val.fun->formals),
+                  lvalue_copy(mp, v->val.fun->body));
     break;
   case LVAL_BUILTIN:
     x->val.builtin = v->val.builtin;
@@ -149,12 +149,12 @@ struct lvalue *lvalue_copy(struct lvalue *v) {
     x->val.l.count = v->val.l.count;
     x->val.l.cells = malloc(v->val.l.count * sizeof(struct lvalue *));
     for (size_t i = 0; i < x->val.l.count; ++i) {
-      x->val.l.cells[i] = lvalue_copy(v->val.l.cells[i]);
+      x->val.l.cells[i] = lvalue_copy(mp, v->val.l.cells[i]);
     }
     break;
   case LVAL_FILE:
-    p = lvalue_copy(v->val.file->path);
-    m = lvalue_copy(v->val.file->mode);
+    p = lvalue_copy(mp, v->val.file->path);
+    m = lvalue_copy(mp, v->val.file->mode);
     fp = v->val.file->fp; /* copy share fp to limit fp use to the same file */
     x->val.file = lfile_new(p, m, fp);
     break;
@@ -210,9 +210,9 @@ int lvalue_eq(struct lvalue *x, struct lvalue *y) {
 /**
  * evaluate a function
  */
-struct lvalue *lvalue_call(struct lenvironment *e, struct lvalue *f, struct lvalue *v) {
+struct lvalue *lvalue_call(struct linterpreter *intp, struct lvalue *f, struct lvalue *v) {
   if (f->type == LVAL_BUILTIN) {
-    return f->val.builtin(e, v);
+    return f->val.builtin(intp, v);
   }
 
   struct lfunction *func = f->val.fun;
@@ -226,8 +226,8 @@ struct lvalue *lvalue_call(struct lenvironment *e, struct lvalue *f, struct lval
 
     if (formals->val.l.count == 0 && args[0]->type != LVAL_SEXPR) {
       /* Error case: non-symbolic parameter parsed */
-      lvalue_del(v);
-      return lvalue_err("Function parsed too many arguments; "
+      lvalue_del(&intp->lvalue_mp, v);
+      return lvalue_err(&intp->lvalue_mp, "Function parsed too many arguments; "
                         "got %lu expected %lu",
                         given, total);
     } else if (formals->val.l.count == 0 && args[0]->type == LVAL_SEXPR &&
@@ -236,63 +236,63 @@ struct lvalue *lvalue_call(struct lenvironment *e, struct lvalue *f, struct lval
       break;
     }
 
-    struct lvalue *sym = lvalue_pop(formals, 0); /* unbound name */
+    struct lvalue *sym = lvalue_pop(&intp->lvalue_mp, formals, 0); /* unbound name */
 
     if (strcmp(sym->val.strval, "&") == 0) {
       /* Variable argument case with '&' */
       if (formals->val.l.count != 1) {
-        lvalue_del(v);
-        return lvalue_err("Function format invalid. "
+        lvalue_del(&intp->lvalue_mp, v);
+        return lvalue_err(&intp->lvalue_mp, "Function format invalid. "
                           "Symbol '&' not followed by a single symbol.");
       }
 
       /* Binding rest of the arguments to nsym */
-      struct lvalue *nsym = lvalue_pop(formals, 0);
-      lenvironment_put(func->env, nsym, builtin_list(e, v));
-      lvalue_del(sym);
-      lvalue_del(nsym);
+      struct lvalue *nsym = lvalue_pop(&intp->lvalue_mp, formals, 0);
+      lenvironment_put(&intp->lvalue_mp, func->env, nsym, builtin_list(&intp->lvalue_mp, &intp->env, v));
+      lvalue_del(&intp->lvalue_mp, sym);
+      lvalue_del(&intp->lvalue_mp, nsym);
       break;
     }
 
-    struct lvalue *val = lvalue_pop(v, 0); /* value to apply to unbound name */
+    struct lvalue *val = lvalue_pop(&intp->lvalue_mp, v, 0); /* value to apply to unbound name */
 
-    lenvironment_put(func->env, sym, val);
-    lvalue_del(sym);
-    lvalue_del(val);
+    lenvironment_put(&intp->lvalue_mp, func->env, sym, val);
+    lvalue_del(&intp->lvalue_mp, sym);
+    lvalue_del(&intp->lvalue_mp, val);
   }
 
-  lvalue_del(v);
+  lvalue_del(&intp->lvalue_mp, v);
 
   if (formals->val.l.count > 0 && strcmp(formals->val.l.cells[0]->val.strval, "&") == 0) {
     /* only first non-variable arguments was applied; create a empty qexpr  */
 
     if (formals->val.l.count != 2) {
-      return lvalue_err("Function format invalid. "
+      return lvalue_err(&intp->lvalue_mp, "Function format invalid. "
                         "Symbol '&' not followed by single symbol.");
     }
 
     /* Remove '&' */
-    lvalue_del(lvalue_pop(formals, 0));
+    lvalue_del(&intp->lvalue_mp, lvalue_pop(&intp->lvalue_mp, formals, 0));
 
     /* Create a empty list for the next symbol */
-    struct lvalue *sym = lvalue_pop(formals, 0);
-    struct lvalue *val = lvalue_qexpr();
+    struct lvalue *sym = lvalue_pop(&intp->lvalue_mp, formals, 0);
+    struct lvalue *val = lvalue_qexpr(&intp->lvalue_mp);
 
-    lenvironment_put(func->env, sym, val);
-    lvalue_del(sym);
-    lvalue_del(val);
+    lenvironment_put(&intp->lvalue_mp, func->env, sym, val);
+    lvalue_del(&intp->lvalue_mp, sym);
+    lvalue_del(&intp->lvalue_mp, val);
   }
 
   if (formals->val.l.count == 0) {
-    func->env->parent = e;
-    return builtin_eval(func->env, lvalue_add(lvalue_sexpr(), lvalue_copy(func->body)));
+    func->env->parent = &intp->env;
+    return builtin_eval(&intp->lvalue_mp, func->env, lvalue_add(&intp->lvalue_mp, lvalue_sexpr(&intp->lvalue_mp), lvalue_copy(&intp->lvalue_mp, func->body)));
   }
-  return lvalue_copy(f);
+  return lvalue_copy(&intp->lvalue_mp, f);
 }
 
-struct lvalue *lvalue_eval_sexpr(struct lenvironment *e, struct lvalue *v);
+struct lvalue *lvalue_eval_sexpr(struct linterpreter *intp, struct lvalue *v);
 
-struct lvalue *lvalue_eval(struct lenvironment *e, struct lvalue *v) {
+struct lvalue *lvalue_eval(struct linterpreter *intp, struct lvalue *v) {
 
   struct lvalue *x;
   switch (v->type) {
@@ -300,13 +300,13 @@ struct lvalue *lvalue_eval(struct lenvironment *e, struct lvalue *v) {
     /* Eval'ing symbols just looks up the symbol in the symbol table
         Discards the wrapping.
       */
-    x = lenvironment_get(e, v);
-    lvalue_del(v);
+    x = lenvironment_get(&intp->lvalue_mp, &intp->env, v);
+    lvalue_del(&intp->lvalue_mp, v);
     return x;
 
   case LVAL_SEXPR:
     /* this might by a nested sexpr or toplevel */
-    return lvalue_eval_sexpr(e, v);
+    return lvalue_eval_sexpr(intp, v);
   default:
     break;
   }
@@ -314,15 +314,15 @@ struct lvalue *lvalue_eval(struct lenvironment *e, struct lvalue *v) {
   return v;
 }
 
-struct lvalue *lvalue_eval_sexpr(struct lenvironment *e, struct lvalue *v) {
+struct lvalue *lvalue_eval_sexpr(struct linterpreter *intp, struct lvalue *v) {
   /* empty sexpr */
   if (v->val.l.count == 0) {
     return v;
   }
 
   /*
-   * Implicit qouting
-   * Intercept special sexpr to make symbols qouted
+   * Implicit quoting
+   * Intercept special sexpr to make symbols quoted
    */
   struct lvalue *first = v->val.l.cells[0];
   if (first->type == LVAL_SYM && v->val.l.count > 1) {
@@ -330,7 +330,7 @@ struct lvalue *lvalue_eval_sexpr(struct lenvironment *e, struct lvalue *v) {
     if ((strcmp(first->val.strval, "=") == 0 || strcmp(first->val.strval, "def") == 0 ||
          strcmp(first->val.strval, "fn") == 0) &&
         sec->type == LVAL_SYM) {
-      v->val.l.cells[1] = lvalue_add(lvalue_qexpr(), sec);
+      v->val.l.cells[1] = lvalue_add(&intp->lvalue_mp, lvalue_qexpr(&intp->lvalue_mp), sec);
     }
   }
 
@@ -340,7 +340,7 @@ struct lvalue *lvalue_eval_sexpr(struct lenvironment *e, struct lvalue *v) {
       there was any error executing nested sexpr etc...
     */
   for (int i = 0; i < v->val.l.count; i++) {
-    v->val.l.cells[i] = lvalue_eval(e, v->val.l.cells[i]);
+    v->val.l.cells[i] = lvalue_eval(intp, v->val.l.cells[i]);
   }
 
   /* Hoist first lvalue if only one is available.
@@ -348,13 +348,13 @@ struct lvalue *lvalue_eval_sexpr(struct lenvironment *e, struct lvalue *v) {
       the sub lval.has to be evaluated first.
     */
   if (v->val.l.count == 1) {
-    return lvalue_take(v, 0);
+    return lvalue_take(&intp->lvalue_mp, v, 0);
   }
 
   /* Return first error (if any) */
   for (int i = 0; i < v->val.l.count; i++) {
     if (v->val.l.cells[i]->type == LVAL_ERR) {
-      return lvalue_take(v, i);
+      return lvalue_take(&intp->lvalue_mp, v, i);
     }
   }
 
@@ -362,23 +362,23 @@ struct lvalue *lvalue_eval_sexpr(struct lenvironment *e, struct lvalue *v) {
       Take the first lvalue in the sexpression and apply it to the
       following lvalue sequence
   */
-  struct lvalue *operator= lvalue_pop(v, 0);
+  struct lvalue *operator= lvalue_pop(&intp->lvalue_mp, v, 0);
   struct lvalue *res = NULL;
   char *type_name = NULL;
 
   switch (operator->type) {
   case LVAL_FUNCTION:
   case LVAL_BUILTIN:
-    res = lvalue_call(e, operator, v);
+    res = lvalue_call(intp, operator, v);
     break;
   default:
     type_name = ltype_name(operator->type);
-    lvalue_del(operator);
-    lvalue_del(v);
-    return lvalue_err("Expected first argument of %s to be of type '%s'; got '%s'.",
+    lvalue_del(&intp->lvalue_mp, operator);
+    lvalue_del(&intp->lvalue_mp, v);
+    return lvalue_err(&intp->lvalue_mp, "Expected first argument of %s to be of type '%s'; got '%s'.",
                       ltype_name(LVAL_SEXPR), ltype_name(LVAL_BUILTIN), type_name);
   }
 
-  lvalue_del(operator);
+  lvalue_del(&intp->lvalue_mp, operator);
   return res;
 }

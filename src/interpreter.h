@@ -14,7 +14,7 @@ struct linterpreter {
   mpc_err_t *error;
 };
 
-void linterpreter_init(struct linterpreter *intp);
+int linterpreter_init(struct linterpreter *intp);
 void linterpreter_destroy(struct linterpreter *dest);
 
 int linterpreter_exec(struct linterpreter *intp, const char *exec, struct lvalue **out);

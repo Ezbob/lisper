@@ -21,6 +21,7 @@ target_sources(lisper
     src/value/transformers.c
     src/value/constructors.c
     src/compat/string.c
+    src/interpreter.c
 )
 
 set_property(TARGET lisper PROPERTY C_STANDARD 17)

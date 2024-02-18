@@ -22,6 +22,7 @@ typedef struct mpc_ast_t mpc_ast_t;
 struct lenvironment;
 struct lfunction;
 struct lfile;
+struct linterpreter;
 
 // lvalue is the standard return type from any lisper computation
 struct lvalue {
@@ -31,7 +32,7 @@ struct lvalue {
     long long intval;
     char *strval;
     struct lcells l;
-    struct lvalue *(*builtin)(struct lenvironment *, struct lvalue *);
+    struct lvalue *(*builtin)(struct linterpreter *, struct lvalue *);
     struct lfunction *fun;
     struct lfile *file;
   } val;
