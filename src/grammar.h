@@ -16,7 +16,8 @@ struct grammar_elems {
   mpc_parser_t *Lisper;
 };
 
-void grammar_elems_init(struct grammar_elems *);
+struct grammar_elems *grammar_elems_new(void);
+int grammar_elems_init(struct grammar_elems *);
 void grammar_elems_destroy(struct grammar_elems *);
 void grammar_make_lang(struct grammar_elems *);
 

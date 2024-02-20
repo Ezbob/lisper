@@ -1,12 +1,13 @@
 #include "print.h"
-#include "lvalue.h"
-#include "lfunction.h"
 #include "lfile.h"
+#include "lfunction.h"
+#include "lvalue.h"
+#include "mpc.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "mpc.h"
+
 
 /**
  * Prints lvalue expressions (such as sexprs) given the prefix,
@@ -15,14 +16,16 @@
 void lvalue_expr_print(struct lvalue *val, char prefix, char suffix, char delimiter) {
   putchar(prefix);
 
-  size_t len = val->val.l.count;
+  size_t len = val->val.list.count;
 
   if (len > 0)
-    lvalue_print(val->val.l.cells[0]);
+  {
+    lvalue_print(val->val.list.cells[0]);
+  }
 
   for (size_t i = 1; i < len; i++) {
     putchar(delimiter);
-    lvalue_print(val->val.l.cells[i]);
+    lvalue_print(val->val.list.cells[i]);
   }
 
   putchar(suffix);
@@ -145,8 +148,8 @@ void lvalue_depth_print(struct lvalue *v, size_t depth) {
 
   /* only q-expressions and s-expression has children */
   if (v->type == LVAL_QEXPR || v->type == LVAL_SEXPR) {
-    for (size_t i = 0; i < v->val.l.count; ++i) {
-      lvalue_depth_print(v->val.l.cells[i], depth + 1);
+    for (size_t i = 0; i < v->val.list.count; ++i) {
+      lvalue_depth_print(v->val.list.cells[i], depth + 1);
     }
   }
 }

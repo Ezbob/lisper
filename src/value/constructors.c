@@ -3,13 +3,14 @@
 #include "lfile.h"
 #include "lfunction.h"
 #include "lvalue.h"
-#include "transformers.h"
 #include "mempool.h"
+#include "mpc.h"
+#include "transformers.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "mpc.h"
+
 
 struct lvalue *lvalue_int(struct mempool *mp, long long num) {
   struct lvalue *val = mempool_take(mp);
@@ -57,16 +58,16 @@ struct lvalue *lvalue_sym(struct mempool *mp, char *sym) {
 struct lvalue *lvalue_sexpr(struct mempool *mp) {
   struct lvalue *val = mempool_take(mp);
   val->type = LVAL_SEXPR;
-  val->val.l.count = 0;
-  val->val.l.cells = NULL;
+  val->val.list.count = 0;
+  val->val.list.cells = NULL;
   return val;
 }
 
 struct lvalue *lvalue_qexpr(struct mempool *mp) {
   struct lvalue *val = mempool_take(mp);
   val->type = LVAL_QEXPR;
-  val->val.l.count = 0;
-  val->val.l.cells = NULL;
+  val->val.list.count = 0;
+  val->val.list.cells = NULL;
   return val;
 }
 
@@ -232,10 +233,10 @@ void lvalue_del(struct mempool *mp, struct lvalue *val) {
     break;
   case LVAL_QEXPR:
   case LVAL_SEXPR:
-    for (size_t i = 0; i < val->val.l.count; ++i) {
-      lvalue_del(mp, val->val.l.cells[i]);
+    for (size_t i = 0; i < val->val.list.count; ++i) {
+      lvalue_del(mp, val->val.list.cells[i]);
     }
-    free(val->val.l.cells);
+    free(val->val.list.cells);
     break;
   }
   mempool_recycle(mp, val);

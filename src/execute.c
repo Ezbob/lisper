@@ -7,7 +7,7 @@
 #include "value/print.h"
 #include "value/transformers.h"
 #include "value/constructors.h"
-#include "interpreter.h"
+#include "lisper_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "mempool.h"
@@ -57,7 +57,7 @@ int exec_repl(struct linterpreter *intp) {
   atexit(goodbye_exit);
 
 #ifdef _DEBUG
-  lenvironment_pretty_print(&intp->env);
+  lenvironment_pretty_print(intp->env);
 #endif
   while (1) {
     input = linenoise("lisper>>> ");
@@ -70,15 +70,15 @@ int exec_repl(struct linterpreter *intp) {
 
     linenoiseHistoryAdd(input);
 
-    if (mpc_parse("<stdin>", input, intp->grammar.Lisper, &r)) {
-      struct lvalue *read = lvalue_read(&intp->lvalue_mp, r.output);
+    if (mpc_parse("<stdin>", input, intp->grammar->Lisper, &r)) {
+      struct lvalue *read = lvalue_read(intp->lvalue_mp, r.output);
 #ifdef _DEBUG
       printf("Parsed input:\n");
       mpc_ast_print(r.output);
       printf("Lval object:\n");
       lvalue_pretty_print(read);
       printf("Current env:\n");
-      lenvironment_pretty_print(&intp->env);
+      lenvironment_pretty_print(intp->env);
       printf("Eval result:\n");
 #endif
       val = lvalue_eval(intp, read);
@@ -86,7 +86,7 @@ int exec_repl(struct linterpreter *intp) {
         return intp->halt_value.rc;
       }
       lvalue_println(val);
-      lvalue_del(&intp->lvalue_mp, val);
+      lvalue_del(intp->lvalue_mp, val);
       mpc_ast_delete(r.output);
     } else {
       mpc_err_print(r.error);
@@ -100,13 +100,13 @@ int exec_repl(struct linterpreter *intp) {
 
 int exec_filein(struct linterpreter *intp, struct lisper_params *params) {
   int rc = 0;
-  struct lvalue *args = lvalue_add(&intp->lvalue_mp, lvalue_sexpr(&intp->lvalue_mp), lvalue_str(&intp->lvalue_mp, params->filename));
+  struct lvalue *args = lvalue_add(intp->lvalue_mp, lvalue_sexpr(intp->lvalue_mp), lvalue_str(intp->lvalue_mp, params->filename));
   struct lvalue *x = builtin_load(intp, args);
   if (x->type == LVAL_ERR) {
     lvalue_println(x);
     rc = 1;
   }
-  lvalue_del(&intp->lvalue_mp, x);
+  lvalue_del(intp->lvalue_mp, x);
   return rc;
 }
 
@@ -114,15 +114,15 @@ int exec_eval(struct linterpreter *intp,
               struct lisper_params *params) {
   int rc = 0;
   mpc_result_t r;
-  if (mpc_parse("<stdin>", params->command, intp->grammar.Lisper, &r)) {
-    struct lvalue *read = lvalue_read(&intp->lvalue_mp, r.output);
+  if (mpc_parse("<stdin>", params->command, intp->grammar->Lisper, &r)) {
+    struct lvalue *read = lvalue_read(intp->lvalue_mp, r.output);
 #ifdef _DEBUG
     printf("Parsed input:\n");
     mpc_ast_print(r.output);
     printf("Lval object:\n");
     lvalue_pretty_print(read);
     printf("Current env:\n");
-    lenvironment_pretty_print(&intp->env);
+    lenvironment_pretty_print(intp->env);
     printf("Eval result:\n");
 #endif
     struct lvalue *val = lvalue_eval(intp, read);
@@ -133,7 +133,7 @@ int exec_eval(struct linterpreter *intp,
     if (val->type == LVAL_ERR) {
       rc = 1;
     }
-    lvalue_del(&intp->lvalue_mp, val);
+    lvalue_del(intp->lvalue_mp, val);
     mpc_ast_delete(r.output);
   } else {
     mpc_err_print(r.error);

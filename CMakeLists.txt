@@ -4,8 +4,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 project(lisper C)
 
-
-add_executable(lisper "")
+add_library(lisper STATIC)
 
 target_sources(lisper
   PRIVATE
@@ -21,8 +20,22 @@ target_sources(lisper
     src/value/constructors.c
     src/value/print.c
     src/compat/string.c
-    src/interpreter.c
 )
+
+add_executable(linterper "")
+
+target_sources(linterper
+  PRIVATE
+    src/main.c
+)
+
+target_link_libraries(linterper
+  PRIVATE
+    lisper
+)
+
+set_property(TARGET linterper PROPERTY C_STANDARD 17)
+set_property(TARGET linterper PROPERTY C_STANDARD_REQUIRED ON)
 
 set_property(TARGET lisper PROPERTY C_STANDARD 17)
 set_property(TARGET lisper PROPERTY C_STANDARD_REQUIRED ON)

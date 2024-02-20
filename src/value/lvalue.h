@@ -19,7 +19,6 @@ enum ltype {
 };
 
 typedef struct mpc_ast_t mpc_ast_t;
-struct lenvironment;
 struct lfunction;
 struct lfile;
 struct linterpreter;
@@ -27,17 +26,15 @@ struct linterpreter;
 // lvalue is the standard return type from any lisper computation
 struct lvalue {
   enum ltype type;
-  union val {
+  union {
     double floatval;
     long long intval;
     char *strval;
-    struct lcells l;
+    struct lcells list;
     struct lvalue *(*builtin)(struct linterpreter *, struct lvalue *);
     struct lfunction *fun;
     struct lfile *file;
   } val;
 };
-
-
 
 #endif

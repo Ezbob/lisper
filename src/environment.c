@@ -4,7 +4,7 @@
 #include "value/constructors.h"
 #include "value/transformers.h"
 #include "value/lvalue.h"
-#include "interpreter.h"
+#include "lisper_internal.h"
 #include "value/print.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -116,13 +116,13 @@ struct lenvironment *lenvironment_copy(struct mempool *mp, struct lenvironment *
 }
 
 void lenvironment_add_builtin(struct linterpreter *intp, char *name, builtin_func_ptr func) {
-  struct lvalue *k = lvalue_sym(&intp->lvalue_mp, name);
-  struct lvalue *v = lvalue_builtin(&intp->lvalue_mp, func);
+  struct lvalue *k = lvalue_sym(intp->lvalue_mp, name);
+  struct lvalue *v = lvalue_builtin(intp->lvalue_mp, func);
 
-  lenvironment_put(&intp->lvalue_mp, &intp->env, k, v);
+  lenvironment_put(intp->lvalue_mp, intp->env, k, v);
 
-  lvalue_del(&intp->lvalue_mp, k);
-  lvalue_del(&intp->lvalue_mp, v);
+  lvalue_del(intp->lvalue_mp, k);
+  lvalue_del(intp->lvalue_mp, v);
 }
 
 struct lvalue *lenvironment_get(struct mempool *mp, struct lenvironment *e, struct lvalue *k) {
