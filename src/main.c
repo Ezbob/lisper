@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "lisper.h"
-
 /*
 void signal_handler(int signum) {
   if (signum == SIGINT) {
@@ -21,19 +20,21 @@ int main(int argc, char **argv) {
 
   struct linterpreter *interpreter;
 
-  if (linterpreter_init(&interpreter, argc, argv) == -1) {
+  if (lisper_init(&interpreter, argc, argv) == -1) {
     return 1;
   }
 
   struct lvalue *out;
-  int rc = linterpreter_exec(interpreter, "(+ 2 (+ 1 3) (* 4 2))", &out);
-  if (rc >= 0) {
+  out = lisper_exec(interpreter, "(+ 2 (+ 1 3) (* 4 2)) (+ 2 4)");
+  if (!lvalue_is_error(out)) {
 
     if (lvalue_is_int(out)) {
       lvalue_get_int(out);
       printf("result -> %lli\n", lvalue_get_int(out));
     }
 
+  } else {
+    fprintf(stderr, "error: %s\n", lvalue_get_error(out));
   }
 
   lvalue_delete(interpreter, out);
@@ -64,6 +65,6 @@ int main(int argc, char **argv) {
     rc = exec_repl(&interpreter);
   }
 */
-  linterpreter_destroy(interpreter);
+  lisper_destroy(interpreter);
   return 0;
 }

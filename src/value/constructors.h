@@ -11,6 +11,7 @@ struct lvalue *lvalue_err(struct mempool *mp, char *, ...);
 struct lvalue *lvalue_float(struct mempool *mp, double);
 struct lvalue *lvalue_bool(struct mempool *mp, long long);
 struct lvalue *lvalue_int(struct mempool *mp, long long);
+struct lvalue *lvalue_exit(struct mempool *mp, int rc);
 struct lvalue *lvalue_sym(struct mempool *mp, char *);
 struct lvalue *lvalue_str(struct mempool *mp, char *);
 struct lvalue *lvalue_builtin(struct mempool *mp,

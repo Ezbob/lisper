@@ -692,7 +692,7 @@ struct lvalue *builtin_exit(struct linterpreter *intp, struct lvalue *v) {
   intp->halt_type = LINTERP_USER_EXIT;
   intp->halt_value.rc = exit_code;
 
-  return lvalue_sexpr(intp->lvalue_mp);
+  return lvalue_exit(intp->lvalue_mp, exit_code);
 }
 
 struct lvalue *builtin_if(struct linterpreter *intp, struct lvalue *v) {
@@ -962,6 +962,10 @@ struct lvalue *builtin_load(struct linterpreter *intp, struct lvalue *v) {
 
     while (LCELLCOUNT(expr)) {
       struct lvalue *x = lvalue_eval(intp, lvalue_pop(intp->lvalue_mp, expr, 0));
+      if (x->type == LVAL_USER_EXIT) {
+        lvalue_del(intp->lvalue_mp, expr);
+        return x;
+      }
 
       if (x->type == LVAL_ERR) {
         lvalue_println(x);

@@ -11,6 +11,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+struct lvalue *lvalue_exit(struct mempool *mp, int rc) {
+  struct lvalue *v = mempool_take(mp);
+  v->type = LVAL_USER_EXIT;
+  v->val.small_intval = rc;
+  return v;
+}
 
 struct lvalue *lvalue_int(struct mempool *mp, long long num) {
   struct lvalue *val = mempool_take(mp);

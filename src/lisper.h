@@ -17,10 +17,10 @@ typedef struct {
   struct lvalue **cells;
 } llist;
 
-int linterpreter_init(struct linterpreter **intp, int argc, char **argv);
-void linterpreter_destroy(struct linterpreter *intp);
+int lisper_init(struct linterpreter **intp, int argc, char **argv);
+void lisper_destroy(struct linterpreter *intp);
 
-int linterpreter_exec(struct linterpreter *intp, const char *exec, struct lvalue **out);
+struct lvalue *lisper_exec(struct linterpreter *intp, const char *exec);
 
 int lvalue_is_int(struct lvalue *);
 linteger lvalue_get_int(struct lvalue *);
@@ -37,8 +37,8 @@ const char *lvalue_get_symbol(struct lvalue *);
 int lvalue_is_list(struct lvalue *);
 llist *lvalue_get_list(struct lvalue *);
 
-int lvalue_is_list(struct lvalue *);
-llist *lvalue_get_list(struct lvalue *);
+int lvalue_is_error(struct lvalue *);
+const char *lvalue_get_error(struct lvalue *);
 
 void lvalue_delete(struct linterpreter *, struct lvalue *);
 

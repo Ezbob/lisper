@@ -15,7 +15,8 @@ enum ltype {
   LVAL_FUNCTION,
   LVAL_FILE,
   LVAL_BOOL,
-  LVAL_STR
+  LVAL_STR,
+  LVAL_USER_EXIT
 };
 
 typedef struct mpc_ast_t mpc_ast_t;
@@ -30,6 +31,7 @@ struct lvalue {
     double floatval;
     long long intval;
     char *strval;
+    int small_intval;
     struct lcells list;
     struct lvalue *(*builtin)(struct linterpreter *, struct lvalue *);
     struct lfunction *fun;

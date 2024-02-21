@@ -8,7 +8,7 @@
 #include "mpc.h"
 #include "grammar.h"
 
-int linterpreter_init(struct linterpreter **intpp, int argc, char **argv) {
+int lisper_init(struct linterpreter **intpp, int argc, char **argv) {
   *intpp = malloc(sizeof(struct linterpreter));
   if (*intpp == NULL) {
     return -1;
@@ -27,7 +27,6 @@ int linterpreter_init(struct linterpreter **intpp, int argc, char **argv) {
   }
   intp->lvalue_mp = mempool_new(sizeof(struct lvalue), 10000);
   if (!intp->lvalue_mp) {
-    
     free(intp);
     return -1;
   }
@@ -44,7 +43,7 @@ int linterpreter_init(struct linterpreter **intpp, int argc, char **argv) {
   return 0;
 }
 
-void linterpreter_destroy(struct linterpreter *intp) {
+void lisper_destroy(struct linterpreter *intp) {
   grammar_elems_destroy(intp->grammar);
   lenvironment_del(intp->lvalue_mp, intp->env);
   mempool_del(intp->lvalue_mp);
@@ -54,35 +53,23 @@ void linterpreter_destroy(struct linterpreter *intp) {
   free(intp);
 }
 
-int linterpreter_exec(struct linterpreter *intp, const char *exec, struct lvalue **out) {
-  int rc = 0;
+struct lvalue *lisper_exec(struct linterpreter *intp, const char *exec) {
   mpc_result_t r;
   if (mpc_parse("<stdin>", exec, intp->grammar->Lisper, &r)) {
     struct lvalue *read = lvalue_read(intp->lvalue_mp, r.output);
     struct lvalue *result = lvalue_eval(intp, read);
     if (intp->halt_type == LINTERP_USER_EXIT) {
-      lvalue_del(intp->lvalue_mp, result);
-      return intp->halt_value.rc;
-    }
-    if (result->type == LVAL_ERR) {
-      rc = -1;
-    }
-    if (out) {
-      *out = result;
-    } else {
-      lvalue_del(intp->lvalue_mp, result);
+      return result;
     }
     mpc_ast_delete(r.output);
+    return result;
   } else {
     intp->halt_type = LINTERP_BAD_SYNTAX;
     intp->halt_value.error = mpc_err_string(r.error);
     mpc_err_delete(r.error);
-    if (out) {
-      *out = NULL;
-    }
-    rc = -1;
+    return lvalue_err(intp->lvalue_mp, "Syntax error: %s", intp->halt_value.error);
   }
-  return rc;
+  return NULL;
 }
 
 
@@ -124,6 +111,14 @@ int lvalue_is_list(struct lvalue *v) {
 
 llist *lvalue_get_list(struct lvalue *v) {
   return (llist *)(&v->val.list);
+}
+
+int lvalue_is_error(struct lvalue *v) {
+  return v->type == LVAL_ERR;
+}
+
+const char *lvalue_get_error(struct lvalue *v) {
+  return v->val.strval;
 }
 
 void lvalue_delete(struct linterpreter *intp, struct lvalue *v) {

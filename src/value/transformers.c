@@ -346,7 +346,12 @@ struct lvalue *lvalue_eval_sexpr(struct linterpreter *intp, struct lvalue *v) {
       there was any error executing nested sexpr etc...
     */
   for (int i = 0; i < v->val.list.count; i++) {
-    v->val.list.cells[i] = lvalue_eval(intp, v->val.list.cells[i]);
+    struct lvalue *res = lvalue_eval(intp, v->val.list.cells[i]);
+    if (intp->halt_type == LVAL_USER_EXIT && res->type == LVAL_USER_EXIT) {
+      lvalue_del(intp->lvalue_mp, v);
+      return res;
+    }
+    v->val.list.cells[i] = res;
   }
 
   /* Hoist first lvalue if only one is available.
