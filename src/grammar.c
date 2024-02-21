@@ -2,7 +2,7 @@
 #include "mpc.h"
 
 struct grammar_elems *grammar_elems_new() {
-  struct grammar_elems *result = malloc(sizeof(struct grammar_elems *));
+  struct grammar_elems *result = malloc(sizeof(struct grammar_elems));
   if (!result) {
     return NULL;
   }
@@ -104,9 +104,10 @@ int grammar_elems_init(struct grammar_elems *elems) {
 }
 
 void grammar_elems_destroy(struct grammar_elems *elems) {
-  mpc_cleanup(10, elems->Boolean, elems->Integer, elems->Float, elems->Comment,
+    mpc_cleanup(10, elems->Boolean, elems->Integer, elems->Float, elems->Comment,
               elems->String, elems->Symbol, elems->Qexpr, elems->Sexpr, elems->Expr,
               elems->Lisper);
+    free(elems);
 }
 
 void grammar_make_lang(struct grammar_elems *elems) {

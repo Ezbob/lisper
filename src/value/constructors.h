@@ -2,6 +2,8 @@
 #ifndef _HEADER_FILE_constructors_20240217150145_
 #define _HEADER_FILE_constructors_20240217150145_
 
+#include <stddef.h>
+
 struct lvalue;
 struct mempool;
 struct linterpreter;

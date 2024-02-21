@@ -53,6 +53,9 @@ void lvalue_print(struct lvalue *val) {
   case LVAL_FLOAT:
     printf("%lf", val->val.floatval);
     break;
+  case LVAL_USER_EXIT:
+    printf("%i", val->val.small_intval);
+    break;
   case LVAL_INT:
     printf("%lli", val->val.intval);
     break;
@@ -148,7 +151,7 @@ void lvalue_depth_print(struct lvalue *v, size_t depth) {
 
   /* only q-expressions and s-expression has children */
   if (v->type == LVAL_QEXPR || v->type == LVAL_SEXPR) {
-    for (size_t i = 0; i < v->val.list.count; ++i) {
+    for (int i = 0; i < v->val.list.count; ++i) {
       lvalue_depth_print(v->val.list.cells[i], depth + 1);
     }
   }

@@ -218,6 +218,7 @@ void lvalue_del(struct mempool *mp, struct lvalue *val) {
   case LVAL_INT:
   case LVAL_BUILTIN:
   case LVAL_BOOL:
+  case LVAL_USER_EXIT:
     break;
   case LVAL_FUNCTION:
     func = val->val.fun;
@@ -239,7 +240,7 @@ void lvalue_del(struct mempool *mp, struct lvalue *val) {
     break;
   case LVAL_QEXPR:
   case LVAL_SEXPR:
-    for (size_t i = 0; i < val->val.list.count; ++i) {
+    for (int i = 0; i < val->val.list.count; ++i) {
       lvalue_del(mp, val->val.list.cells[i]);
     }
     free(val->val.list.cells);

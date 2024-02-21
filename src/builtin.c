@@ -94,7 +94,7 @@ struct lvalue *builtin_add(struct linterpreter *intp, struct lvalue *in) {
       lvalue_del(intp->lvalue_mp, in);
       return err;
     };
-    for (size_t i = 1; i < LCELLCOUNT(in); i++) {
+    for (int i = 1; i < LCELLCOUNT(in); i++) {
       struct lvalue *curr = LGETCELL(in, i);
       if (!(expected_arg_type == curr->type)) {
         struct lvalue *err = lvalue_err(
@@ -390,7 +390,7 @@ struct lvalue *builtin_args(struct linterpreter *intp, struct lvalue *v) {
  */
 struct lvalue *builtin_print(struct linterpreter *intp, struct lvalue *v) {
 
-  for (size_t i = 0; i < LCELLCOUNT(v); ++i) {
+  for (int i = 0; i < LCELLCOUNT(v); ++i) {
     lvalue_print(LGETCELL(v, i));
     putchar(' ');
   }
@@ -601,7 +601,7 @@ struct lvalue *builtin_head(struct linterpreter *intp, struct lvalue *v) {
 }
 
 struct lvalue *builtin_join(struct linterpreter *intp, struct lvalue *v) {
-  for (size_t i = 0; i < LCELLCOUNT(v); ++i) {
+  for (int i = 0; i < LCELLCOUNT(v); ++i) {
     LTWO_ARG_TYPES(intp->lvalue_mp, v, "join", i, LVAL_QEXPR, LVAL_STR);
   }
 
@@ -739,7 +739,7 @@ struct lvalue *builtin_lambda(struct linterpreter *intp, struct lvalue *v) {
   struct lvalue *formals = LGETCELL(v, 0);
   struct lvalue *body = LGETCELL(v, 1);
 
-  for (size_t i = 0; i < LCELLCOUNT(formals); ++i) {
+  for (int i = 0; i < LCELLCOUNT(formals); ++i) {
     LASSERT(intp->lvalue_mp, v, LGETCELL(formals, i)->type == LVAL_SYM,
             "Expected parameter %lu to be of type '%s'; got type '%s'.", i + 1,
             ltype_name(LVAL_SYM), ltype_name(LGETCELL(formals, i)->type));
@@ -773,7 +773,7 @@ struct lvalue *builtin_fn(struct linterpreter *intp, struct lvalue *v) {
           ltype_name(LVAL_SYM), ltype_name(LGETCELL(name, 0)->type));
 
   /* checking formals parameters */
-  for (size_t i = 0; i < LCELLCOUNT(formals); ++i) {
+  for (int i = 0; i < LCELLCOUNT(formals); ++i) {
     LASSERT(intp->lvalue_mp, v, LGETCELL(formals, i)->type == LVAL_SYM,
             "Expected parameter %lu to be of type '%s'; got type '%s'.", i + 1,
             ltype_name(LVAL_SYM), ltype_name(LGETCELL(formals, i)->type));
@@ -811,7 +811,7 @@ struct lvalue *builtin_var(struct linterpreter *intp, struct lvalue *v, char *sy
 
   struct lvalue *names = LGETCELL(v, 0);
 
-  for (size_t i = 0; i < LCELLCOUNT(names); ++i) {
+  for (int i = 0; i < LCELLCOUNT(names); ++i) {
     LASSERT(intp->lvalue_mp, v, LGETCELL(names, i)->type == LVAL_SYM,
             "Function '%s' cannot assign value(s) to name(s). Name %lu is of type '%s'; "
             "expected type '%s'.",
@@ -823,7 +823,7 @@ struct lvalue *builtin_var(struct linterpreter *intp, struct lvalue *v, char *sy
           "value(s) does not match. Saw %lu name(s) expected %lu value(s).",
           sym, LCELLCOUNT(names), LCELLCOUNT(v) - 1);
 
-  for (size_t i = 0; i < LCELLCOUNT(names); ++i) {
+  for (int i = 0; i < LCELLCOUNT(names); ++i) {
     if (strcmp(sym, "def") == 0) {
       lenvironment_def(intp->lvalue_mp, intp->env, LGETCELL(names, i),
                        LGETCELL(v, i + 1));

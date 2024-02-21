@@ -143,6 +143,9 @@ struct lvalue *lvalue_copy(struct mempool *mp, struct lvalue *v) {
     x->val.strval = malloc((strlen(v->val.strval) + 1) * sizeof(char));
     strcpy(x->val.strval, v->val.strval);
     break;
+  case LVAL_USER_EXIT:
+    x->val.small_intval = v->val.small_intval;
+    break;
   case LVAL_INT:
   case LVAL_BOOL:
     x->val.intval = v->val.intval;
@@ -151,7 +154,7 @@ struct lvalue *lvalue_copy(struct mempool *mp, struct lvalue *v) {
   case LVAL_QEXPR:
     x->val.list.count = v->val.list.count;
     x->val.list.cells = malloc(v->val.list.count * sizeof(struct lvalue *));
-    for (size_t i = 0; i < x->val.list.count; ++i) {
+    for (int i = 0; i < x->val.list.count; ++i) {
       x->val.list.cells[i] = lvalue_copy(mp, v->val.list.cells[i]);
     }
     break;
@@ -182,6 +185,8 @@ int lvalue_eq(struct lvalue *x, struct lvalue *y) {
   case LVAL_BOOL:
   case LVAL_INT:
     return (x->val.intval == y->val.intval);
+  case LVAL_USER_EXIT:
+    return x->val.small_intval == y->val.small_intval;
   case LVAL_ERR:
   case LVAL_SYM:
   case LVAL_STR:
@@ -200,7 +205,7 @@ int lvalue_eq(struct lvalue *x, struct lvalue *y) {
     if (x->val.list.count != y->val.list.count) {
       return 0;
     }
-    for (size_t i = 0; i < x->val.list.count; ++i) {
+    for (int i = 0; i < x->val.list.count; ++i) {
       if (!lvalue_eq(x->val.list.cells[i], y->val.list.cells[i])) {
         return 0;
       }
@@ -347,7 +352,7 @@ struct lvalue *lvalue_eval_sexpr(struct linterpreter *intp, struct lvalue *v) {
     */
   for (int i = 0; i < v->val.list.count; i++) {
     struct lvalue *res = lvalue_eval(intp, v->val.list.cells[i]);
-    if (intp->halt_type == LVAL_USER_EXIT && res->type == LVAL_USER_EXIT) {
+    if (intp->halt_type == LINTERP_USER_EXIT && res->type == LVAL_USER_EXIT) {
       lvalue_del(intp->lvalue_mp, v);
       return res;
     }
