@@ -6,7 +6,7 @@
 #include "value/lvalue.h"
 #include "value/print.h"
 #include "value/transformers.h"
-#include "lisper_internal.h"
+#include "interpreter.h"
 #include <math.h>
 #include <stdlib.h>
 

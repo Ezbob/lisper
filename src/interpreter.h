@@ -23,5 +23,4 @@ struct linterpreter {
   } halt_value;
 };
 
-
 #endif

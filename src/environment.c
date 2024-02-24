@@ -4,7 +4,7 @@
 #include "value/constructors.h"
 #include "value/transformers.h"
 #include "value/lvalue.h"
-#include "lisper_internal.h"
+#include "interpreter.h"
 #include "value/print.h"
 #include <stdlib.h>
 #include <stdio.h>

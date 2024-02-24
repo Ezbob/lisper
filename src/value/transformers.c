@@ -5,13 +5,14 @@
 #include "lisper.h"
 #include "lfile.h"
 #include "lfunction.h"
-#include "lisper_internal.h"
+#include "interpreter.h"
 #include "lvalue.h"
 #include "mempool.h"
 #include "print.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "compat/string.h"
 
 struct lvalue *builtin_list(struct linterpreter *intp, struct lvalue *v);
 struct lvalue *builtin_eval(struct linterpreter *intp, struct lvalue *v);
@@ -140,8 +141,7 @@ struct lvalue *lvalue_copy(struct mempool *mp, struct lvalue *v) {
   case LVAL_ERR:
   case LVAL_SYM:
   case LVAL_STR:
-    x->val.strval = malloc((strlen(v->val.strval) + 1) * sizeof(char));
-    strcpy(x->val.strval, v->val.strval);
+    x->val.strval = strdup(v->val.strval);
     break;
   case LVAL_USER_EXIT:
     x->val.small_intval = v->val.small_intval;

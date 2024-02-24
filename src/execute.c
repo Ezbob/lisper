@@ -7,7 +7,7 @@
 #include "value/print.h"
 #include "value/transformers.h"
 #include "value/constructors.h"
-#include "lisper_internal.h"
+#include "interpreter.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "mempool.h"
