@@ -689,9 +689,6 @@ struct lvalue *builtin_exit(struct linterpreter *intp, struct lvalue *v) {
   int exit_code = (int)(LGETCELL(v, 0)->val.intval);
   lvalue_del(intp->lvalue_mp, v);
 
-  intp->halt_type = LINTERP_USER_EXIT;
-  intp->halt_value.rc = exit_code;
-
   return lvalue_exit(intp->lvalue_mp, exit_code);
 }
 

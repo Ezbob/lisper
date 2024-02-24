@@ -11,7 +11,7 @@ target_sources(lisper
     src/grammar.c
     src/builtin.c
     src/environment.c
-    src/execute.c
+    #src/execute.c
     src/lisper.c
     src/mempool.c
     src/mpc.c

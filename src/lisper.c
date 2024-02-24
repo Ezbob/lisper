@@ -14,7 +14,7 @@ int lisper_init(struct linterpreter **intpp, int argc, char **argv) {
     return -1;
   }
   struct linterpreter *intp = *intpp;
-  intp->halt_type = LINTERP_NO_HALT;
+
   if (argv && argc >= 0) {
     intp->argc = argc;
     intp->argv = argv;
@@ -47,9 +47,6 @@ void lisper_destroy(struct linterpreter *intp) {
   grammar_elems_destroy(intp->grammar);
   lenvironment_del(intp->lvalue_mp, intp->env);
   mempool_del(intp->lvalue_mp);
-  if (intp->halt_type == LINTERP_BAD_SYNTAX) {
-    free(intp->halt_value.error);
-  }
   free(intp);
 }
 
@@ -58,16 +55,12 @@ struct lvalue *lisper_exec(struct linterpreter *intp, const char *exec) {
   if (mpc_parse("<stdin>", exec, intp->grammar->Lisper, &r)) {
     struct lvalue *read = lvalue_read(intp->lvalue_mp, r.output);
     struct lvalue *result = lvalue_eval(intp, read);
-    if (intp->halt_type == LINTERP_USER_EXIT) {
-      return result;
-    }
     mpc_ast_delete(r.output);
     return result;
   } else {
-    intp->halt_type = LINTERP_BAD_SYNTAX;
-    intp->halt_value.error = mpc_err_string(r.error);
+    struct lvalue *err = lvalue_err(intp->lvalue_mp, "Syntax error: (%i:%i) %s", r.error->state.row, r.error->state.col, mpc_err_string(r.error));
     mpc_err_delete(r.error);
-    return lvalue_err(intp->lvalue_mp, "Syntax error: %s", intp->halt_value.error);
+    return err;
   }
   return NULL;
 }

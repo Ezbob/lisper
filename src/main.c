@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
   }
 
   struct lvalue *out;
-  out = lisper_exec(interpreter, "(+ 2 (+ 1 3) (* 4 2))\n(+ 2 4)");
+  out = lisper_exec(interpreter, "(+ 2 (+ 1 3) (* 4 2))");
   if (!lvalue_is_error(out)) {
 
     if (lvalue_is_int(out)) {

@@ -352,7 +352,7 @@ struct lvalue *lvalue_eval_sexpr(struct linterpreter *intp, struct lvalue *v) {
     */
   for (int i = 0; i < v->val.list.count; i++) {
     struct lvalue *res = lvalue_eval(intp, v->val.list.cells[i]);
-    if (intp->halt_type == LINTERP_USER_EXIT && res->type == LVAL_USER_EXIT) {
+    if (res->type == LVAL_USER_EXIT) {
       lvalue_del(intp->lvalue_mp, v);
       return res;
     }
