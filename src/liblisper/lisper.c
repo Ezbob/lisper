@@ -57,12 +57,11 @@ struct lvalue *lisper_exec(struct linterpreter *intp, const char *exec) {
     struct lvalue *result = lvalue_eval(intp, read);
     mpc_ast_delete(r.output);
     return result;
-  } else {
-    struct lvalue *err = lvalue_err(intp->lvalue_mp, "Syntax error: (%i:%i) %s", r.error->state.row, r.error->state.col, mpc_err_string(r.error));
-    mpc_err_delete(r.error);
-    return err;
   }
-  return NULL;
+
+  struct lvalue *err = lvalue_err(intp->lvalue_mp, "Syntax error: (%i:%i) %s", r.error->state.row, r.error->state.col, mpc_err_string(r.error));
+  mpc_err_delete(r.error);
+  return err;
 }
 
 int lvalue_is_int(struct lvalue *v) {
